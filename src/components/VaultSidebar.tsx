@@ -116,8 +116,8 @@ const VaultSidebar = () => {
 
   return (
     <aside 
-      className={`vault-sidebar fixed left-0 top-0 h-screen border-r border-sidebar-border z-40 ${
-        isSticky ? 'sticky' : 'expanded'
+      className={`vault-sidebar fixed left-0 top-0 h-screen border-r border-sidebar-border z-40 transition-all duration-300 ${
+        isSticky ? (isExpanded ? 'w-64' : 'w-16') : 'w-64'
       }`}
       onMouseEnter={() => isSticky && setIsExpanded(true)}
       onMouseLeave={() => isSticky && setIsExpanded(false)}
@@ -125,12 +125,16 @@ const VaultSidebar = () => {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-4 border-b border-sidebar-border">
-          <div className={`flex items-center ${isSticky && !isExpanded ? 'justify-center' : 'space-x-3'}`}>
-            <VaultLogo />
-            <div className={`transition-opacity duration-200 ${
-              isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+          <div className={`flex items-center transition-all duration-300 ${
+            isSticky && !isExpanded ? 'justify-center' : 'space-x-3'
+          }`}>
+            <div className="flex-shrink-0">
+              <VaultLogo />
+            </div>
+            <div className={`transition-all duration-300 overflow-hidden ${
+              isSticky && !isExpanded ? 'w-0 opacity-0' : 'w-auto opacity-100'
             }`}>
-              <span className="text-xl font-bold text-sidebar-foreground">Vault</span>
+              <span className="text-xl font-bold text-sidebar-foreground whitespace-nowrap">Vault</span>
             </div>
           </div>
         </div>
@@ -141,15 +145,17 @@ const VaultSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 ${
+              className={`flex items-center py-3 px-3 rounded-lg transition-all duration-300 ${
                 isActive(item.path) 
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
                   : 'hover:bg-sidebar-accent text-sidebar-foreground'
               } ${isSticky && !isExpanded ? 'justify-center' : 'space-x-3'}`}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
-              <span className={`transition-opacity duration-200 ${
-                isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                isSticky && !isExpanded ? 'w-0 opacity-0' : 'w-auto opacity-100'
               }`}>
                 {item.title}
               </span>
@@ -159,18 +165,20 @@ const VaultSidebar = () => {
 
         {/* Settings */}
         <div className="p-3 border-t border-sidebar-border">
-          <div className={`flex items-center ${isSticky && !isExpanded ? 'justify-center' : 'justify-between'}`}>
+          <div className={`flex items-center transition-all duration-300 ${
+            isSticky && !isExpanded ? 'justify-center' : 'justify-between'
+          }`}>
             <button
               onClick={() => setIsSticky(!isSticky)}
-              className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+              className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors flex-shrink-0"
               title={isSticky ? 'Disable Sticky Mode' : 'Enable Sticky Mode'}
             >
               <Settings className="h-5 w-5" />
             </button>
-            <div className={`transition-opacity duration-200 ${
-              isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+            <div className={`transition-all duration-300 overflow-hidden ${
+              isSticky && !isExpanded ? 'w-0 opacity-0' : 'w-auto opacity-100'
             }`}>
-              <span className="text-sm text-sidebar-foreground">
+              <span className="text-sm text-sidebar-foreground whitespace-nowrap">
                 {isSticky ? 'Sticky' : 'Expanded'}
               </span>
             </div>

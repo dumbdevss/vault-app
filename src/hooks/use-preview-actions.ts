@@ -1,11 +1,10 @@
 
 import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
-import { useTranslation } from "react-i18next";
+import { toast } from "@/hooks/use-toast";
 import { generateCSVData } from "@/lib/utils";
-import { jsPDF } from "jspdf";
+import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { saveAs } from 'file-saver';
+import { saveAs } from "file-saver";
 
 interface ExportOptions {
   title?: string;
@@ -24,32 +23,40 @@ const exportModuleData = async (
   format: 'csv' | 'pdf',
   data: any[],
   options: ExportOptions = {}
-) => {
-  if (!data || data.length === 0) {
-    throw new Error("No data to export.");
-  }
+): Promise<void> => {
+  const { title = moduleName, columns } = options;
 
-  const { title = `Rapport - ${moduleName}`, columns } = options;
-
-  if (format === 'csv') {
-    const csvData = generateCSVData(data, columns);
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
-    saveAs(blob, `${title}.csv`);
-  } else if (format === 'pdf') {
-    const doc = new jsPDF();
-    (doc as any).autoTable({
-      head: columns ? columns.map(col => col.header) : Object.keys(data[0]),
-      body: data.map(item => columns ? columns.map(col => item[col.accessorKey]) : Object.values(item)),
-      title: title,
-    });
-    doc.save(`${title}.pdf`);
-  } else {
-    throw new Error(`Unsupported format: ${format}`);
+  try {
+    if (format === 'csv') {
+      const csvData = generateCSVData(data, columns);
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, `${title}.csv`);
+    } else if (format === 'pdf') {
+      const doc = new jsPDF();
+      doc.text(title, 20, 20);
+      
+      const tableData = data.map(item => 
+        columns ? columns.map(col => item[col.accessorKey || col.key] || '') : Object.values(item)
+      );
+      
+      const headers = columns ? columns.map(col => col.header || col.key) : Object.keys(data[0] || {});
+      
+      (doc as any).autoTable({
+        head: [headers],
+        body: tableData,
+        startY: 30,
+      });
+      
+      doc.save(`${title}.pdf`);
+    }
+  } catch (error) {
+    console.error('Export failed:', error);
+    throw error;
   }
 };
 
 const generatePreviewHTML = (data: any[], title: string, columns?: any[]): string => {
-  if (!data || data.length === 0) return '<p>Aucune donnée à afficher</p>';
+  if (!data || data.length === 0) return '<p>No data to display</p>';
   
   const headers = columns ? columns.map(col => col.header) : Object.keys(data[0]);
   const headerRow = headers.map(header => `<th>${header}</th>`).join('');
@@ -71,7 +78,7 @@ const generatePreviewHTML = (data: any[], title: string, columns?: any[]): strin
         <tbody>${dataRows}</tbody>
       </table>
       <div class="footer">
-        <p>Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
+        <p>Generated on ${new Date().toLocaleDateString()}</p>
       </div>
     </div>
   `;
@@ -81,7 +88,6 @@ export function usePreviewActions(props?: UsePreviewActionsProps) {
   const [isActionInProgress, setIsActionInProgress] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewHTML, setPreviewHTML] = useState('');
-  const { t } = useTranslation();
 
   const handleExportModule = async (
     moduleName: string,
@@ -93,19 +99,19 @@ export function usePreviewActions(props?: UsePreviewActionsProps) {
     
     try {
       await exportModuleData(moduleName, 'pdf', data, {
-        title: title || `Rapport - ${moduleName}`,
+        title: title || `Report - ${moduleName}`,
         columns: columns
       });
       
       toast({
-        title: "Export réussi",
-        description: `Les données de ${moduleName} ont été exportées avec succès.`,
+        title: "Export successful",
+        description: "The file has been downloaded successfully.",
       });
     } catch (error) {
-      console.error('Erreur lors de l\'export:', error);
+      console.error('Export error:', error);
       toast({
-        title: "Erreur d'export",
-        description: "Une erreur s'est produite lors de l'export des données.",
+        title: "Export failed",
+        description: "An error occurred during export.",
         variant: "destructive",
       });
     } finally {
@@ -129,7 +135,7 @@ export function usePreviewActions(props?: UsePreviewActionsProps) {
           <!DOCTYPE html>
           <html>
             <head>
-              <title>Impression</title>
+              <title>Print</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 20px; }
                 table { width: 100%; border-collapse: collapse; }

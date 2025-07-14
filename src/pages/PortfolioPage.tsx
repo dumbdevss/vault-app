@@ -122,12 +122,12 @@ const PortfolioPage = () => {
   const totalChange24h = 3.8;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Portfolio Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <Card className="lg:col-span-2 vault-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-lg">
               <DollarSign className="h-5 w-5 text-primary" />
               <span>Total Portfolio Value</span>
             </CardTitle>
@@ -151,8 +151,8 @@ const PortfolioPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="vault-card">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm">Tokens</CardTitle>
           </CardHeader>
           <CardContent>
@@ -163,8 +163,8 @@ const PortfolioPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="vault-card">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm">DeFi Positions</CardTitle>
           </CardHeader>
           <CardContent>
@@ -177,8 +177,8 @@ const PortfolioPage = () => {
       </div>
 
       {/* Main Content */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="tokens" className="flex items-center space-x-2">
             <Coins className="h-4 w-4" />
             <span>Tokens</span>
@@ -193,12 +193,12 @@ const PortfolioPage = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="tokens" className="space-y-4">
-          <div className="grid gap-4">
+        <TabsContent value="tokens" className="space-y-4 w-full">
+          <div className="grid gap-4 w-full">
             {mockTokens.map((token, index) => (
-              <Card key={index} className="hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card key={index} className="vault-card hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between w-full">
                     <div className="flex items-center space-x-3">
                       <div className="text-2xl">{token.icon}</div>
                       <div>
@@ -231,10 +231,10 @@ const PortfolioPage = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="nfts" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="nfts" className="space-y-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
             {mockNFTs.map((nft, index) => (
-              <Card key={index} className="hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card key={index} className="vault-card hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="aspect-square bg-muted rounded-lg flex items-center justify-center text-4xl">
@@ -252,12 +252,12 @@ const PortfolioPage = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="defi" className="space-y-4">
-          <div className="grid gap-4">
+        <TabsContent value="defi" className="space-y-4 w-full">
+          <div className="grid gap-4 w-full">
             {mockDeFiPositions.map((position, index) => (
-              <Card key={index} className="hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card key={index} className="vault-card hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between w-full">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-medium">{position.protocol}</h3>
