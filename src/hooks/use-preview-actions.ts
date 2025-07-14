@@ -76,7 +76,9 @@ export const usePreviewActions = ({
     setIsActionInProgress(true);
     
     try {
-      await exportModuleData(moduleName, 'pdf', data, {
+      // Fix: Remove the fourth argument and merge options into the third parameter
+      await exportModuleData(moduleName, 'pdf', {
+        data: data,
         title: title || `Rapport - ${moduleName}`,
         columns: columns
       });
