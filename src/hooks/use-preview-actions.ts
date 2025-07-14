@@ -1,94 +1,74 @@
+import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
+import { generateCSVData } from "@/lib/utils";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { saveAs } from 'file-saver';
 
-import { useState } from 'react';
-import { useCRM } from '@/contexts/CRMContext';
-import { useAppSettings } from '@/contexts/AppSettingsContext';
-import { generatePreviewHTML } from '@/utils/preview-generator';
-import { toast } from 'sonner';
-
-interface UsePreviewActionsProps {
-  data: any[];
-  moduleName: string;
-  columns?: { key: string, header: string }[];
+interface ExportOptions {
   title?: string;
+  columns?: any[];
 }
 
-export const usePreviewActions = ({ 
-  data, 
-  moduleName, 
-  columns, 
-  title 
-}: UsePreviewActionsProps) => {
-  const { printModuleData, exportModuleData } = useCRM();
-  const { settings } = useAppSettings();
+const exportModuleData = async (
+  moduleName: string,
+  format: 'csv' | 'pdf',
+  data: any[],
+  options: ExportOptions = {}
+) => {
+  if (!data || data.length === 0) {
+    throw new Error("No data to export.");
+  }
+
+  const { title = `Rapport - ${moduleName}`, columns } = options;
+
+  if (format === 'csv') {
+    const csvData = generateCSVData(data, columns);
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, `${title}.csv`);
+  } else if (format === 'pdf') {
+    const doc = new jsPDF();
+    (doc as any).autoTable({
+      head: columns ? columns.map(col => col.header) : Object.keys(data[0]),
+      body: data.map(item => columns ? columns.map(col => item[col.accessorKey]) : Object.values(item)),
+      title: title,
+    });
+    doc.save(`${title}.pdf`);
+  } else {
+    throw new Error(`Unsupported format: ${format}`);
+  }
+};
+
+export function usePreviewActions() {
   const [isActionInProgress, setIsActionInProgress] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewHTML, setPreviewHTML] = useState<string>('');
+  const { t } = useTranslation();
 
-  const handlePrint = async () => {
-    if (!data || data.length === 0) {
-      toast.error("Aucune donnée à imprimer", {
-        description: "Veuillez vérifier vos filtres ou sélectionner une autre période."
-      });
-      return;
-    }
-
+  const handleExportModule = async (
+    moduleName: string,
+    data: any[],
+    title?: string,
+    columns?: any[]
+  ) => {
     setIsActionInProgress(true);
     
     try {
-      await printModuleData(moduleName, {
-        columns: columns,
-        title: title || `Aperçu - ${moduleName}`
-      });
-      toast.success("Document envoyé à l'impression", {
-        description: "Votre document a été envoyé à l'imprimante."
-      });
-    } catch (error) {
-      console.error("Erreur lors de l'impression:", error);
-      toast.error("Erreur d'impression", {
-        description: "Une erreur s'est produite lors de l'impression du document."
-      });
-    } finally {
-      setIsActionInProgress(false);
-    }
-  };
-
-  const handleShowPreview = () => {
-    if (!data || data.length === 0) {
-      toast.error("Aucune donnée à afficher", {
-        description: "Veuillez vérifier vos filtres ou sélectionner une autre période."
-      });
-      return;
-    }
-    
-    const html = generatePreviewHTML(data, moduleName, title, columns, settings.locale);
-    setPreviewHTML(html);
-    setPreviewOpen(true);
-  };
-
-  const handleExportPDF = async () => {
-    if (!data || data.length === 0) {
-      toast.error("Aucune donnée à exporter", {
-        description: "Veuillez vérifier vos filtres ou sélectionner une autre période."
-      });
-      return;
-    }
-
-    setIsActionInProgress(true);
-    
-    try {
-      // Fix: Remove the fourth argument and merge options into the third parameter
-      await exportModuleData(moduleName, 'pdf', {
-        data: data,
+      // Fix: Pass data directly as the third parameter
+      await exportModuleData(moduleName, 'pdf', data, {
         title: title || `Rapport - ${moduleName}`,
         columns: columns
       });
-      toast.success("PDF généré avec succès", {
-        description: "Le document a été téléchargé."
+      
+      toast({
+        title: "Export réussi",
+        description: `Les données de ${moduleName} ont été exportées avec succès.`,
       });
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      toast.error("Erreur d'exportation", {
-        description: "Une erreur s'est produite lors de la génération du PDF."
+      console.error('Erreur lors de l\'export:', error);
+      toast({
+        title: "Erreur d'export",
+        description: "Une erreur s'est produite lors de l'export des données.",
+        variant: "destructive",
       });
     } finally {
       setIsActionInProgress(false);
@@ -97,11 +77,6 @@ export const usePreviewActions = ({
 
   return {
     isActionInProgress,
-    previewOpen,
-    setPreviewOpen,
-    previewHTML,
-    handlePrint,
-    handleShowPreview,
-    handleExportPDF
+    handleExportModule,
   };
-};
+}

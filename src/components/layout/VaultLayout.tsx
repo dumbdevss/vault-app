@@ -11,10 +11,10 @@ const VaultLayout = ({ children }: VaultLayoutProps) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <VaultSidebar />
-      <div className={`${isMobile ? 'pt-20 pb-20' : 'ml-16'}`}>
-        <main className="p-6">
+      <div className={`main-content transition-all duration-300 ${isMobile ? 'pt-20 pb-20' : 'ml-16'}`}>
+        <main className="container mx-auto p-6 max-w-7xl">
           {children}
         </main>
       </div>

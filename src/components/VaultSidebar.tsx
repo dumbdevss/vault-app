@@ -53,7 +53,7 @@ const VaultSidebar = () => {
     return (
       <>
         {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border p-4 flex items-center justify-between">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <VaultLogo />
             <span className="text-xl font-bold">Vault</span>
@@ -116,7 +116,7 @@ const VaultSidebar = () => {
 
   return (
     <aside 
-      className={`vault-sidebar fixed left-0 top-0 h-screen bg-sidebar-background border-r border-sidebar-border z-40 ${
+      className={`vault-sidebar fixed left-0 top-0 h-screen border-r border-sidebar-border z-40 ${
         isSticky ? 'sticky' : 'expanded'
       }`}
       onMouseEnter={() => isSticky && setIsExpanded(true)}
@@ -125,10 +125,10 @@ const VaultSidebar = () => {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center space-x-3">
+          <div className={`flex items-center ${isSticky && !isExpanded ? 'justify-center' : 'space-x-3'}`}>
             <VaultLogo />
             <div className={`transition-opacity duration-200 ${
-              isSticky && !isExpanded ? 'opacity-0' : 'opacity-100'
+              isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
             }`}>
               <span className="text-xl font-bold text-sidebar-foreground">Vault</span>
             </div>
@@ -141,15 +141,15 @@ const VaultSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200 ${
+              className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 ${
                 isActive(item.path) 
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
                   : 'hover:bg-sidebar-accent text-sidebar-foreground'
-              }`}
+              } ${isSticky && !isExpanded ? 'justify-center' : 'space-x-3'}`}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
               <span className={`transition-opacity duration-200 ${
-                isSticky && !isExpanded ? 'opacity-0' : 'opacity-100'
+                isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
               }`}>
                 {item.title}
               </span>
@@ -159,18 +159,16 @@ const VaultSidebar = () => {
 
         {/* Settings */}
         <div className="p-3 border-t border-sidebar-border">
-          <div className="flex items-center justify-between">
+          <div className={`flex items-center ${isSticky && !isExpanded ? 'justify-center' : 'justify-between'}`}>
             <button
               onClick={() => setIsSticky(!isSticky)}
-              className={`p-2 rounded-lg hover:bg-sidebar-accent transition-colors ${
-                isSticky && !isExpanded ? 'opacity-50' : 'opacity-100'
-              }`}
+              className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
               title={isSticky ? 'Disable Sticky Mode' : 'Enable Sticky Mode'}
             >
               <Settings className="h-5 w-5" />
             </button>
             <div className={`transition-opacity duration-200 ${
-              isSticky && !isExpanded ? 'opacity-0' : 'opacity-100'
+              isSticky && !isExpanded ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
             }`}>
               <span className="text-sm text-sidebar-foreground">
                 {isSticky ? 'Sticky' : 'Expanded'}
