@@ -1,6 +1,11 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { AutoConnectProvider } from "@/components/AutoConnectProvider";
+import { ReactQueryClientProvider } from "@/components/ReactQueryClientProvider";
+import { TransactionSubmitterProvider } from "@/components/TransactionSubmitterProvider";
+import { WalletProvider } from "@/components/WalletProvider";
+
 import App from './App';
 import './index.css';
 
@@ -13,6 +18,14 @@ if (!container) {
 const root = createRoot(container);
 root.render(
   <React.StrictMode>
-    <App />
+    <AutoConnectProvider>
+      <TransactionSubmitterProvider>
+        <ReactQueryClientProvider>
+          <WalletProvider>
+            <App />
+          </WalletProvider>
+        </ReactQueryClientProvider>
+      </TransactionSubmitterProvider>
+    </AutoConnectProvider>
   </React.StrictMode>
 );

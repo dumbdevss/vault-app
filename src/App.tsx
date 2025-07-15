@@ -10,17 +10,12 @@ import PlatformsPage from "./pages/PlatformsPage";
 import NFTsPage from "./pages/NFTsPage";
 import { useEffect } from "react";
 
-// Create query client with enhanced configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    },
-  },
-});
+
+const metadata = {
+  title: 'Vault',
+  description: 'Decentralized Finance (DeFi) Platform',
+  
+};
 
 // Application main component
 const App = () => {
@@ -30,7 +25,6 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
           <VaultLayout>
@@ -44,7 +38,6 @@ const App = () => {
           </VaultLayout>
         </TooltipProvider>
       </BrowserRouter>
-    </QueryClientProvider>
   );
 };
 

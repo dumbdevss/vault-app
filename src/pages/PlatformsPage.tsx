@@ -129,7 +129,7 @@ const PlatformsPage = () => {
       </div>
 
       {/* Platform Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredPlatforms.map((platform, index) => (
           <Card key={index} className="vault-card hover:bg-accent/50 transition-colors cursor-pointer">
             <CardHeader>

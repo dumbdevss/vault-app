@@ -1,9 +1,12 @@
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export function isMainnet(networkName: string): boolean {
+  return networkName.toLowerCase().includes('mainnet');
 }
 
 export function generateCSVData(data: any[], columns?: any[]) {
