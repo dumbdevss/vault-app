@@ -1,5 +1,3 @@
-"use client";
-
 import {
   APTOS_CONNECT_ACCOUNT_URL,
   AboutAptosConnect,
@@ -44,7 +42,6 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useToast } from "./ui/use-toast";
-import ConnectWalletButton from "./ConnectWalletButton";
 
 export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   const { account, connected, disconnect, wallet } = useWallet();
@@ -73,7 +70,8 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   return connected ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button>
+        <Button className="gap-2">
+          <User className="h-4 w-4" />
           {account?.ansName ||
             truncateAddress(account?.address?.toString()) ||
             "Unknown"}
@@ -103,7 +101,7 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   ) : (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-       <ConnectWalletButton />
+        <Button>Connect a Wallet</Button>
       </DialogTrigger>
       <ConnectWalletDialog close={closeDialog} {...walletSortingOptions} />
     </Dialog>

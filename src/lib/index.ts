@@ -40,3 +40,27 @@ export const isMainnet = (
 ): boolean => {
   return connected && networkName === Network.MAINNET;
 };
+
+export const toHexString = (byteArray: { [key: string]: number }) => {
+  if (!byteArray || typeof byteArray !== 'object') return '';
+  const bytes = Object.values(byteArray);
+  return '0x' + bytes.map(byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+export function conditionalFixed(num: number, decimalPlaces = 6) {
+  // Convert to string to analyze decimal places
+  const strNum = num.toString();
+
+  // Check if it has a decimal point
+  if (strNum.includes('.')) {
+      const decimals = strNum.split('.')[1].length;
+
+      // Only apply toFixed if it has more decimal places than specified
+      if (decimals > decimalPlaces) {
+          return num.toFixed(decimalPlaces);
+      }
+  }
+
+  // Otherwise return the original number (as string to match toFixed behavior)
+  return strNum;
+}

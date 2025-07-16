@@ -1,11 +1,8 @@
 import React from 'react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Network } from '@aptos-labs/ts-sdk';
+
 import { WalletSelector as ShadcnWalletSelector } from "@/components/WalletSelector";
-import { MultiAgent } from "@/components/transactionFlows/MultiAgent";
-import { SingleSigner } from "@/components/transactionFlows/SingleSigner";
-import { Sponsor } from "@/components/transactionFlows/Sponsor";
-import { TransactionParameters } from "@/components/transactionFlows/TransactionParameters";
+
 import { init as initTelegram } from '@telegram-apps/sdk';
 import { isMainnet } from '@/lib';
 
@@ -31,18 +28,7 @@ if (isTelegramMiniApp) {
 }
 
 const VaultTopbar = () => {
-  const { account, connected, network, wallet, changeNetwork } = useWallet();
-
-  // Function to handle network switching (e.g., between Mainnet and Testnet)
-  const handleNetworkSwitch = async () => {
-    if (!network) return;
-    const targetNetwork = isMainnet(network.name) ? Network.TESTNET : Network.MAINNET;
-    try {
-      await changeNetwork(targetNetwork);
-    } catch (error) {
-      console.error('Failed to switch network:', error);
-    }
-  };
+  const { connected } = useWallet();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black p-4 flex items-center justify-between">
@@ -57,27 +43,7 @@ const VaultTopbar = () => {
         {/* Wallet Connection Button */}
         <ShadcnWalletSelector />
 
-        {/* Network Switch Button */}
-        {connected && network && (
-          <button
-            onClick={handleNetworkSwitch}
-            className="p-2 bg-gray-700 text-white rounded hover:bg-gray-600"
-          >
-            Switch to {isMainnet(network.name) ? 'Testnet' : 'Mainnet'}
-          </button>
-        )}
 
-        {/* Transaction Flow Components (visible when wallet is connected) */}
-        {connected && (
-          <>
-            <div className="flex items-center space-x-4">
-              <TransactionParameters />
-              <SingleSigner />
-              <Sponsor />
-              <MultiAgent />
-            </div>
-          </>
-        )}
       </div>
     </header>
   );

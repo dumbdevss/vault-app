@@ -5,6 +5,7 @@ import { AutoConnectProvider } from "@/components/AutoConnectProvider";
 import { ReactQueryClientProvider } from "@/components/ReactQueryClientProvider";
 import { TransactionSubmitterProvider } from "@/components/TransactionSubmitterProvider";
 import { WalletProvider } from "@/components/WalletProvider";
+import { Toaster } from './components/ui/toaster';
 
 import App from './App';
 import './index.css';
@@ -23,6 +24,7 @@ root.render(
         <ReactQueryClientProvider>
           <WalletProvider>
             <App />
+            <Toaster />
           </WalletProvider>
         </ReactQueryClientProvider>
       </TransactionSubmitterProvider>
