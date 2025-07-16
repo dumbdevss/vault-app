@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { InputTransactionData } from "@aptos-labs/wallet-adapter-core";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +11,9 @@ import { toast } from '@/components/ui/use-toast';
 import { toHexString, conditionalFixed } from '@/lib';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { aptosClient } from '@/lib';
+import { TransactionHash } from "../components/TransactionHash";
+import tokens from '@/utils/tokens.json';
 
 const SwapPage: React.FC = () => {
   const [fromAmount, setFromAmount] = useState('');
@@ -52,6 +56,78 @@ const SwapPage: React.FC = () => {
 
   const chainId = network?.name === 'mainnet' ? '1' : '2';
 
+  // Debounced fetch quote function
+  const fetchQuote = useCallback(async () => {
+    if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
+      setToAmount('');
+      setQuoteData({});
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        chainId,
+        fromTokenAddress: getTokenAddress(fromToken),
+        toTokenAddress: getTokenAddress(toToken),
+        fromTokenAmount: fromAmount,
+        toWalletAddress: ownerAddress as string,
+        slippagePercentage: slippage.toString(),
+        integratorFeeAddress,
+        integratorFeePercentage: integratorFeePercentage.toString(),
+      });
+
+      const response = await fetch(`${baseUrl}/swap/quote?${params.toString()}`, {
+        headers: {
+          'x-api-key': panoraApiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const quote = await response.json();
+      const exchangeRate = parseFloat(quote.fromToken.current_price) / parseFloat(quote.toToken.current_price);
+      const calculatedToAmount = parseFloat(fromAmount) * exchangeRate;
+
+      setToAmount(conditionalFixed(calculatedToAmount, 6) || '');
+      setQuoteData({
+        exchangeRate: conditionalFixed(exchangeRate, 6) || '1',
+        slippagePercentage: slippage,
+        priceImpact: Number(quote.priceImpact) || 0.1,
+        networkFee: Number(quote.feeAmountUSD) || 0.02,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch swap quote. Please try again.',
+        variant: 'destructive',
+      });
+      console.error('Quote error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fromAmount, fromToken, toToken, account, slippage, chainId, ownerAddress, integratorFeeAddress, integratorFeePercentage, panoraApiKey, baseUrl, getTokenAddress, toast]);
+
+  // Debounce effect for quote fetching
+  useEffect(() => {
+    if (!fromAmount || fromToken === toToken || !fromToken || !toToken || !account?.address) {
+      setToAmount('');
+      setQuoteData({});
+      return;
+    }
+
+    // Create a debounced function
+    const timeoutId = setTimeout(() => {
+      fetchQuote();
+    }, 800); // 800ms delay - adjust as needed
+
+    // Cleanup function to cancel the timeout if dependencies change
+    return () => clearTimeout(timeoutId);
+  }, [fromAmount, fromToken, toToken, account, slippage]);
+
   // Fetch tokens
   useEffect(() => {
     const fetchTokens = async () => {
@@ -76,19 +152,19 @@ const SwapPage: React.FC = () => {
         const panoraTokens = await response.json();
 
         const mappedTokens = panoraTokens?.data
-        ?.map((token: any) => ({
-          tokenAddress: token.tokenAddress,
-          symbol: token.symbol,
-          name: token.name,
-          decimals: token.decimals,
-          icon_uri: token.logoUrl,
-          usdPrice: token.usdPrice,
-          amount: 0,
-          asset_type: token.tokenAddress,
-        }))
-        .filter((token: any, index: number, array: any[]) => 
-          array.findIndex(t => t.symbol === token.symbol) === index
-        );
+          ?.map((token: any) => ({
+            tokenAddress: token.tokenAddress,
+            symbol: token.symbol,
+            name: token.name,
+            decimals: token.decimals,
+            icon_uri: token.logoUrl,
+            usdPrice: token.usdPrice,
+            amount: 0,
+            asset_type: token.tokenAddress,
+          }))
+          .filter((token: any, index: number, array: any[]) =>
+            array.findIndex(t => t.symbol === token.symbol) === index
+          );
         setAllTokens(mappedTokens);
 
         const GET_USER_TOKEN_BALANCE = `
@@ -150,67 +226,7 @@ const SwapPage: React.FC = () => {
     };
 
     fetchTokens();
-  }, [connected, ownerAddress, aptosIndexerUrl, setTokens, setAllTokens, chainId, panoraApiKey, toast, setFromToken, setToToken, setTokenListLoading]);
-
-  // Fetch swap quote
-  useEffect(() => {
-    if (fromAmount && fromToken !== toToken && account?.address && fromToken && toToken) {
-      fetchQuote();
-    } else {
-      setToAmount('');
-      setQuoteData({});
-    }
-  }, [fromAmount, fromToken, toToken, account, slippage]);
-
-  const fetchQuote = async () => {
-    if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) return;
-
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({
-        chainId,
-        fromTokenAddress: getTokenAddress(fromToken),
-        toTokenAddress: getTokenAddress(toToken),
-        fromTokenAmount: fromAmount,
-        toWalletAddress: ownerAddress as string,
-        slippagePercentage: slippage.toString(),
-        integratorFeeAddress,
-        integratorFeePercentage: integratorFeePercentage.toString(),
-      });
-
-      const response = await fetch(`${baseUrl}/swap/quote?${params.toString()}`, {
-        headers: {
-          'x-api-key': panoraApiKey,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const quote = await response.json();
-      const amount = quote.toTokenAmount || quote.fromTokenAmount;
-      const exchangeRate = parseFloat(quote.fromToken.current_price) / parseFloat(quote.toToken.current_price);
-
-      setToAmount(amount?.toString() || '');
-      setQuoteData({
-        exchangeRate: conditionalFixed(exchangeRate, 6) || '1',
-        slippagePercentage: slippage,
-        priceImpact: Number(quote.priceImpact) || 0.1,
-        networkFee: Number(quote.feeAmountUSD) || 0.02,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch swap quote. Please try again.',
-        variant: 'destructive',
-      });
-      console.error('Quote error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [connected, ownerAddress, aptosIndexerUrl, setTokens, setAllTokens, chainId, panoraApiKey, toast]);
 
   const handleSwap = async () => {
     if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
@@ -243,10 +259,10 @@ const SwapPage: React.FC = () => {
         slippagePercentage: slippage.toString(),
         integratorFeeAddress,
         integratorFeePercentage: integratorFeePercentage.toString(),
-        getTransactionData: 'rawTransaction',
       });
 
       const response = await fetch(`${baseUrl}/swap?${params.toString()}`, {
+        method: 'POST',
         headers: {
           'x-api-key': panoraApiKey,
           'Content-Type': 'application/json',
@@ -258,22 +274,35 @@ const SwapPage: React.FC = () => {
       }
 
       const swapData = await response.json();
+      console.log('swapData', swapData);
 
-      const payload: any = {
-        type: 'entry_function_payload',
-        function: swapData.function || '',
-        arguments: swapData.transactionArguments || [],
-        type_arguments: swapData.typeArguments || [],
+      const transaction: InputTransactionData = {
+        data: {
+          function: swapData?.quotes[0]?.txData?.function || '',
+          functionArguments: swapData?.quotes[0]?.txData?.arguments || [],
+          typeArguments: swapData?.quotes[0]?.txData?.type_arguments || [],
+        },
       };
 
-      const txResponse = await signAndSubmitTransaction(payload);
+      const txResponse = await signAndSubmitTransaction({
+        ...transaction,
+        pluginParams: {
+          customParam: "customValue",
+        },
+      });
+
+      await aptosClient(network).waitForTransaction({
+        transactionHash: txResponse.hash,
+      });
+
       if (txResponse.hash) {
         toast({
-          title: 'Success',
-          description: 'Swap completed successfully!',
+          title: "Success",
+          description: <TransactionHash hash={txResponse.hash} network={network} />,
         });
         setFromAmount('');
         setToAmount('');
+
       } else {
         throw new Error('Transaction failed');
       }
@@ -358,10 +387,19 @@ const SwapPage: React.FC = () => {
                 <Input
                   placeholder="0.0"
                   value={fromAmount}
-                  onChange={(e) => setFromAmount(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const balance = ((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0);
+                    if (parseFloat(value) > balance) {
+                      setFromAmount(balance.toString());
+                    } else {
+                      setFromAmount(value);
+                    }
+                  }}
                   className="text-lg"
                   type="number"
                   min="0"
+                  max={((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0).toFixed(2)}
                   step="any"
                   disabled={tokenListLoading || isLoading}
                 />
@@ -397,8 +435,26 @@ const SwapPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Balance: {(ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount.toFixed(2) || '0.00'}
+            <div className="flex justify-between items-center mt-1">
+              <div className="text-xs text-muted-foreground">
+                Balance: {((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0).toFixed(2)}
+              </div>
+              <div className="flex space-x-1">
+                {[0.25, 0.5, 0.75, 1].map((percentage) => (
+                  <Button
+                    key={percentage}
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => {
+                      const balance = (ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0;
+                      setFromAmount((balance * percentage).toString());
+                    }}
+                  >
+                    {percentage === 1 ? 'Max' : `${percentage * 100}%`}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 

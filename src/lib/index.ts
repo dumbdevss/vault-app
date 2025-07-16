@@ -31,7 +31,7 @@ export const isSendableNetwork = (
   connected: boolean,
   networkName?: string,
 ): boolean => {
-  return connected && !isMainnet(connected, networkName);
+  return connected && isMainnet(connected, networkName);
 };
 
 export const isMainnet = (

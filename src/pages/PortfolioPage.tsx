@@ -9,6 +9,7 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTokenStore, CombinedTokenData } from '@/store/tokenStore';
 import { toHexString } from '@/lib';
+import { SingleSigner } from '@/components/transactionFlows/SingleSigner';
 
 interface TokenBalance {
   asset_type: string;
@@ -508,6 +509,9 @@ const PortfolioPage = () => {
           </div>
         </TabsContent>
       </Tabs>
+      {connected && (
+        <SingleSigner />
+      )}
     </div>
   );
 };
