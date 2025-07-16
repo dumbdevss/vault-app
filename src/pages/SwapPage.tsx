@@ -55,99 +55,102 @@ const SwapPage: React.FC = () => {
   // Fetch tokens
   useEffect(() => {
     const fetchTokens = async () => {
+      // Only proceed if wallet is connected
+      if (!connected || !ownerAddress) {
+        setTokenListLoading(false);
+        return;
+      }
+
       setTokenListLoading(true);
       try {
         // Fetch Panora token list
-        const query = { panoraUI: 'true', chainId };
+        const query = { panoraUI: 'true', chainId, panoraTags: "Verified" };
         const queryString = new URLSearchParams(query);
-        if (!connected) {
-          const url = `https://api.panora.exchange/tokenlist?${queryString}`;
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'x-api-key': panoraApiKey },
-          });
-          
-          if (!response.ok) throw new Error('Failed to fetch token list');
-          const panoraTokens = await response.json();
-          const mappedTokens = panoraTokens.map((token: any) => ({
-            tokenAddress: token.tokenAddress,
-            symbol: token.symbol,
-            name: token.name,
-            decimals: token.decimals,
-            icon_uri: token.logoUrl,
-            usdPrice: token.usdPrice,
-            amount: 0,
-            asset_type: token.tokenAddress,
-          }));
-          setAllTokens(mappedTokens);
+        const url = `https://api.panora.exchange/tokenlist?${queryString}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 'x-api-key': panoraApiKey },
+        });
 
-          // Set default tokens
-          if (mappedTokens.length > 0) {
-            setFromToken(mappedTokens[0].symbol);
-            setToToken(mappedTokens[1]?.symbol || mappedTokens[0].symbol);
+        if (!response.ok) throw new Error('Failed to fetch token list');
+        const panoraTokens = await response.json();
+
+        const mappedTokens = panoraTokens?.data
+        ?.map((token: any) => ({
+          tokenAddress: token.tokenAddress,
+          symbol: token.symbol,
+          name: token.name,
+          decimals: token.decimals,
+          icon_uri: token.logoUrl,
+          usdPrice: token.usdPrice,
+          amount: 0,
+          asset_type: token.tokenAddress,
+        }))
+        .filter((token: any, index: number, array: any[]) => 
+          array.findIndex(t => t.symbol === token.symbol) === index
+        );
+        setAllTokens(mappedTokens);
+
+        const GET_USER_TOKEN_BALANCE = `
+        query GetUserTokenBalance($owner_address: String!) {
+          current_fungible_asset_balances(
+            where: { owner_address: { _eq: $owner_address } }
+          ) {
+            asset_type
+            amount
+            metadata { icon_uri name symbol decimals }
           }
-
-          if (connected && ownerAddress) {
-            // Fetch balances from indexer
-            const GET_USER_TOKEN_BALANCE = `
-            query GetUserTokenBalance($owner_address: String!) {
-              current_fungible_asset_balances(
-                where: { owner_address: { _eq: $owner_address } }
-              ) {
-                asset_type
-                amount
-                metadata { icon_uri name symbol decimals }
-              }
-            }
-          `;
-            const balanceResponse = await fetch(aptosIndexerUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                query: GET_USER_TOKEN_BALANCE,
-                variables: { owner_address: ownerAddress },
-              }),
-            });
-            if (!balanceResponse.ok) throw new Error('Failed to fetch balances');
-            const balanceResult = await balanceResponse.json();
-            const balances = balanceResult.data.current_fungible_asset_balances;
-
-            // Combine data
-            const combinedData = balances.map((balance: any) => {
-              const tokenInfo = panoraTokens.find((token: any) => token.tokenAddress === balance.asset_type);
-              return {
-                ...balance,
-                usdPrice: tokenInfo?.usdPrice || '0',
-                icon_uri: balance.metadata.icon_uri || tokenInfo?.logoUrl || '',
-                symbol: balance.metadata.symbol,
-                name: balance.metadata.name,
-                decimals: balance.metadata.decimals,
-                amount: balance.amount / (10 ** balance.metadata.decimals),
-                tokenAddress: balance.asset_type,
-              };
-            });
-
-            setTokens(combinedData);
-
-            // Set default fromToken to first owned token if available
-            if (combinedData.length > 0) {
-              setFromToken(combinedData[0].symbol);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch token data:', error);
-          toast({
-            title: 'Error',
-            description: 'Could not load token balances.',
-            variant: 'destructive',
-          });
-        } finally {
-          setTokenListLoading(false);
         }
-      };
+      `;
 
-      fetchTokens();
-    }, [connected, ownerAddress, aptosIndexerUrl, setTokens, setAllTokens, chainId]);
+        const balanceResponse = await fetch(aptosIndexerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: GET_USER_TOKEN_BALANCE,
+            variables: { owner_address: ownerAddress },
+          }),
+        });
+
+        if (!balanceResponse.ok) throw new Error('Failed to fetch balances');
+        const balanceResult = await balanceResponse.json();
+        const balances = balanceResult.data.current_fungible_asset_balances;
+
+        // Combine data
+        const combinedData = balances.map((balance: any) => {
+          const tokenInfo = panoraTokens?.data.find((token: any) => token.tokenAddress === balance.asset_type);
+          return {
+            ...balance,
+            usdPrice: tokenInfo?.usdPrice || '0',
+            icon_uri: balance.metadata.icon_uri || tokenInfo?.logoUrl || '',
+            symbol: balance.metadata.symbol,
+            name: balance.metadata.name,
+            decimals: balance.metadata.decimals,
+            amount: balance.amount / (10 ** balance.metadata.decimals),
+            tokenAddress: balance.asset_type,
+          };
+        });
+
+        setTokens(combinedData);
+
+        // Set default fromToken to first owned token if available
+        if (combinedData.length > 0) {
+          setFromToken(combinedData[0].symbol);
+        }
+      } catch (error) {
+        console.error('Failed to fetch token data:', error);
+        toast({
+          title: 'Error',
+          description: 'Could not load token balances.',
+          variant: 'destructive',
+        });
+      } finally {
+        setTokenListLoading(false);
+      }
+    };
+
+    fetchTokens();
+  }, [connected, ownerAddress, aptosIndexerUrl, setTokens, setAllTokens, chainId, panoraApiKey, toast, setFromToken, setToToken, setTokenListLoading]);
 
   // Fetch swap quote
   useEffect(() => {
