@@ -7,9 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, Percent, ExternalLink } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useQuery } from '@tanstack/react-query';
-import { useTokenStore, CombinedTokenData } from '@/store/tokenStore';
 import { toHexString } from '@/lib';
-import { SingleSigner } from '@/components/transactionFlows/SingleSigner';
+import { useTokenStore } from '@/store/tokenStore';
 
 interface TokenBalance {
   asset_type: string;
@@ -113,6 +112,8 @@ const PortfolioPage = () => {
 
   const { account, connected, network } = useWallet();
 
+  const { setPortfolioTokens } = useTokenStore();
+
   const ownerAddress = account?.address && typeof account.address === 'object' && 'data' in account.address 
     ? toHexString((account.address as any).data)
     : account?.address;
@@ -211,8 +212,6 @@ const PortfolioPage = () => {
     enabled: connected && !!ownerAddress,
   });
 
-  // Combine token data
-    const setTokens = useTokenStore((state) => state.setTokens);
 
   // Combine token data
   const combinedData = balances?.map((balance) => {
@@ -228,15 +227,7 @@ const PortfolioPage = () => {
     };
   }) || [];
 
-  useEffect(() => {
-    if (combinedData.length > 0) {
-      const storeData: CombinedTokenData[] = combinedData.map(t => ({
-        ...t,
-        tokenAddress: t.asset_type, // Assuming asset_type is the token address
-      }));
-      setTokens(storeData);
-    }
-  }, [combinedData, setTokens]);
+  setPortfolioTokens(combinedData);
 
   // Calculate total portfolio value
   const totalPortfolioValue = combinedData.reduce((acc, token) => {
@@ -509,9 +500,6 @@ const PortfolioPage = () => {
           </div>
         </TabsContent>
       </Tabs>
-      {connected && (
-        <SingleSigner />
-      )}
     </div>
   );
 };

@@ -3,10 +3,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-core";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeftRight, Settings, ArrowUpDown } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { useTokenStore, CombinedTokenData } from '@/store/tokenStore';
+import { useTokenStore } from '@/store/tokenStore';
 import { toast } from '@/components/ui/use-toast';
 import { toHexString, conditionalFixed } from '@/lib';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -14,12 +13,14 @@ import { Label } from '@/components/ui/label';
 import { aptosClient } from '@/lib';
 import { TransactionHash } from "../components/TransactionHash";
 import tokens from '@/utils/tokens.json';
+import { WalletSelector as ShadcnWalletSelector } from '@/components/WalletSelector';
+import { TokenData } from '@/store/tokenStore';
 
 const SwapPage: React.FC = () => {
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [fromToken, setFromToken] = useState('');
-  const [toToken, setToToken] = useState('');
+  const [fromToken, setFromToken] = useState<string | null>(null);
+  const [toToken, setToToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [quoteData, setQuoteData] = useState<{
     exchangeRate?: string;
@@ -30,20 +31,21 @@ const SwapPage: React.FC = () => {
   const [slippage, setSlippage] = useState(parseFloat(import.meta.env.VITE_PANORA_SLIPPAGE_PERCENTAGE || '1'));
   const [fromSearch, setFromSearch] = useState('');
   const [toSearch, setToSearch] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedTokenType, setSelectedTokenType] = useState<'from' | 'to' | null>(null);
+  const [countdown, setCountdown] = useState(15);
 
   const { account, connected, network, signAndSubmitTransaction } = useWallet();
-  const { tokens: ownedTokens, setTokens, allTokens, setAllTokens } = useTokenStore();
-  const [tokenListLoading, setTokenListLoading] = useState(true);
+  const { allTokens, setAllTokens, balances, setBalances } = useTokenStore();
+  const [tokenListLoading, setTokenListLoading] = useState(false);
 
-  // Environment variables with fallback
   const panoraApiKey = import.meta.env.VITE_PANORA_API_KEY || '';
   const baseUrl = 'https://api.panora.exchange';
   const integratorFeeAddress = import.meta.env.VITE_PANORA_INTEGRATOR_FEE_ADDRESS || '';
   const integratorFeePercentage = parseFloat(import.meta.env.VITE_PANORA_INTEGRATOR_FEE_PERCENTAGE || '1');
 
-  // Get token address from symbol
   const getTokenAddress = (symbol: string): string => {
-    return [...ownedTokens, ...allTokens].find((t) => t.symbol === symbol)?.tokenAddress || '';
+    return allTokens.find((t) => t.symbol === symbol)?.faAddress || '';
   };
 
   const ownerAddress = account?.address && typeof account.address === 'object' && 'data' in account.address
@@ -56,7 +58,6 @@ const SwapPage: React.FC = () => {
 
   const chainId = network?.name === 'mainnet' ? '1' : '2';
 
-  // Debounced fetch quote function
   const fetchQuote = useCallback(async () => {
     if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
       setToAmount('');
@@ -68,8 +69,8 @@ const SwapPage: React.FC = () => {
     try {
       const params = new URLSearchParams({
         chainId,
-        fromTokenAddress: getTokenAddress(fromToken),
-        toTokenAddress: getTokenAddress(toToken),
+        fromTokenAddress: getTokenAddress(fromToken!),
+        toTokenAddress: getTokenAddress(toToken!),
         fromTokenAmount: fromAmount,
         toWalletAddress: ownerAddress as string,
         slippagePercentage: slippage.toString(),
@@ -111,122 +112,87 @@ const SwapPage: React.FC = () => {
     }
   }, [fromAmount, fromToken, toToken, account, slippage, chainId, ownerAddress, integratorFeeAddress, integratorFeePercentage, panoraApiKey, baseUrl, getTokenAddress, toast]);
 
-  // Debounce effect for quote fetching
+  // Debounce and auto-refresh logic
   useEffect(() => {
-    if (!fromAmount || fromToken === toToken || !fromToken || !toToken || !account?.address) {
+    if (!fromAmount || parseFloat(fromAmount) <= 0 || fromToken === toToken || !fromToken || !toToken || !account?.address) {
       setToAmount('');
       setQuoteData({});
+      setCountdown(15);
       return;
     }
 
-    // Create a debounced function
-    const timeoutId = setTimeout(() => {
+    // Debounce the initial quote fetch
+    const debounceTimeoutId = setTimeout(() => {
       fetchQuote();
-    }, 800); // 800ms delay - adjust as needed
+      setCountdown(20); // Reset countdown after fetch
+    }, 800);
 
-    // Cleanup function to cancel the timeout if dependencies change
-    return () => clearTimeout(timeoutId);
+    // Auto-refresh timer
+    const intervalId = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          fetchQuote();
+          return 20; // Reset
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Cleanup
+    return () => {
+      clearTimeout(debounceTimeoutId);
+      clearInterval(intervalId);
+    };
   }, [fromAmount, fromToken, toToken, account, slippage]);
 
-  // Fetch tokens
+
+
   useEffect(() => {
-    const fetchTokens = async () => {
-      // Only proceed if wallet is connected
+    setAllTokens(tokens as any);
+    if (tokens.length > 0) {
+      setFromToken(tokens[0].symbol);
+      setToToken(tokens[1]?.symbol || tokens[0].symbol);
+    }
+  }, [setAllTokens]);
+
+  useEffect(() => {
+    const fetchBalances = async () => {
       if (!connected || !ownerAddress) {
-        setTokenListLoading(false);
+        setBalances(new Map());
         return;
       }
-
-      setTokenListLoading(true);
       try {
-        // Fetch Panora token list
-        const query = { panoraUI: 'true', chainId, panoraTags: "Verified" };
-        const queryString = new URLSearchParams(query);
-        const url = `https://api.panora.exchange/tokenlist?${queryString}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { 'x-api-key': panoraApiKey },
-        });
-
-        if (!response.ok) throw new Error('Failed to fetch token list');
-        const panoraTokens = await response.json();
-
-        const mappedTokens = panoraTokens?.data
-          ?.map((token: any) => ({
-            tokenAddress: token.tokenAddress,
-            symbol: token.symbol,
-            name: token.name,
-            decimals: token.decimals,
-            icon_uri: token.logoUrl,
-            usdPrice: token.usdPrice,
-            amount: 0,
-            asset_type: token.tokenAddress,
-          }))
-          .filter((token: any, index: number, array: any[]) =>
-            array.findIndex(t => t.symbol === token.symbol) === index
-          );
-        setAllTokens(mappedTokens);
-
         const GET_USER_TOKEN_BALANCE = `
-        query GetUserTokenBalance($owner_address: String!) {
-          current_fungible_asset_balances(
-            where: { owner_address: { _eq: $owner_address } }
-          ) {
-            asset_type
-            amount
-            metadata { icon_uri name symbol decimals }
-          }
-        }
-      `;
+          query GetUserTokenBalance($owner_address: String!) {
+            current_fungible_asset_balances(where: {owner_address: {_eq: $owner_address}}) {
+              asset_type
+              amount
+              metadata { decimals }
+            }
+          }`;
 
-        const balanceResponse = await fetch(aptosIndexerUrl, {
+        const response = await fetch(aptosIndexerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: GET_USER_TOKEN_BALANCE,
-            variables: { owner_address: ownerAddress },
-          }),
+          body: JSON.stringify({ query: GET_USER_TOKEN_BALANCE, variables: { owner_address: ownerAddress } }),
         });
 
-        if (!balanceResponse.ok) throw new Error('Failed to fetch balances');
-        const balanceResult = await balanceResponse.json();
-        const balances = balanceResult.data.current_fungible_asset_balances;
-
-        // Combine data
-        const combinedData = balances.map((balance: any) => {
-          const tokenInfo = panoraTokens?.data.find((token: any) => token.tokenAddress === balance.asset_type);
-          return {
-            ...balance,
-            usdPrice: tokenInfo?.usdPrice || '0',
-            icon_uri: balance.metadata.icon_uri || tokenInfo?.logoUrl || '',
-            symbol: balance.metadata.symbol,
-            name: balance.metadata.name,
-            decimals: balance.metadata.decimals,
-            amount: balance.amount / (10 ** balance.metadata.decimals),
-            tokenAddress: balance.asset_type,
-          };
+        if (!response.ok) throw new Error('Failed to fetch balances');
+        const result = await response.json();
+        const newBalances = new Map<string, number>();
+        result.data.current_fungible_asset_balances.forEach((balance: any) => {
+          const amount = balance.amount / (10 ** balance.metadata.decimals);
+          newBalances.set(balance.asset_type, amount);
         });
-
-        setTokens(combinedData);
-
-        // Set default fromToken to first owned token if available
-        if (combinedData.length > 0) {
-          setFromToken(combinedData[0].symbol);
-        }
+        setBalances(newBalances);
       } catch (error) {
-        console.error('Failed to fetch token data:', error);
-        toast({
-          title: 'Error',
-          description: 'Could not load token balances.',
-          variant: 'destructive',
-        });
-      } finally {
-        setTokenListLoading(false);
+        console.error('Failed to fetch balances:', error);
+        setBalances(new Map());
       }
     };
 
-    fetchTokens();
-  }, [connected, ownerAddress, aptosIndexerUrl, setTokens, setAllTokens, chainId, panoraApiKey, toast]);
+    fetchBalances();
+  }, [connected, ownerAddress, aptosIndexerUrl, setBalances]);
 
   const handleSwap = async () => {
     if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
@@ -238,8 +204,9 @@ const SwapPage: React.FC = () => {
       return;
     }
 
-    const fromTokenData = ownedTokens.find((t) => t.symbol === fromToken) || allTokens.find((t) => t.symbol === fromToken);
-    if (!fromTokenData || (ownedTokens.length > 0 && parseFloat(fromAmount) > fromTokenData.amount)) {
+    const fromTokenData = allTokens.find((t) => t.symbol === fromToken);
+    const balance = fromTokenData ? balances.get(fromTokenData.tokenAddress) || 0 : 0;
+    if (!fromTokenData || parseFloat(fromAmount) > balance) {
       toast({
         title: 'Insufficient Balance',
         description: `You don't have enough ${fromTokenData?.symbol || fromToken} to complete this swap.`,
@@ -252,8 +219,8 @@ const SwapPage: React.FC = () => {
     try {
       const params = new URLSearchParams({
         chainId,
-        fromTokenAddress: getTokenAddress(fromToken),
-        toTokenAddress: getTokenAddress(toToken),
+        fromTokenAddress: getTokenAddress(fromToken!),
+        toTokenAddress: getTokenAddress(toToken!),
         fromTokenAmount: fromAmount,
         toWalletAddress: ownerAddress as string,
         slippagePercentage: slippage.toString(),
@@ -274,7 +241,6 @@ const SwapPage: React.FC = () => {
       }
 
       const swapData = await response.json();
-      console.log('swapData', swapData);
 
       const transaction: InputTransactionData = {
         data: {
@@ -302,7 +268,6 @@ const SwapPage: React.FC = () => {
         });
         setFromAmount('');
         setToAmount('');
-
       } else {
         throw new Error('Transaction failed');
       }
@@ -326,60 +291,93 @@ const SwapPage: React.FC = () => {
     setToAmount('');
   };
 
-  // Filter tokens based on search
-  const filteredFromTokens = (ownedTokens.length > 0 ? ownedTokens : allTokens).filter(
-    (token) =>
-      token.symbol.toLowerCase().includes(fromSearch.toLowerCase()) ||
-      token.name.toLowerCase().includes(fromSearch.toLowerCase())
-  );
-  const filteredToTokens = allTokens.filter(
-    (token) =>
-      token.symbol.toLowerCase().includes(toSearch.toLowerCase()) ||
-      token.name.toLowerCase().includes(toSearch.toLowerCase())
-  );
+  const filteredTokens = (search: string, excludeSymbol: string | null = null) => {
+    return allTokens.filter(
+      (token) =>
+        (token.symbol.toLowerCase().includes(search.toLowerCase()) ||
+          token.name.toLowerCase().includes(search.toLowerCase())) &&
+        token.symbol !== excludeSymbol
+    );
+  };
+
+  const openSidebar = (type: 'from' | 'to') => {
+    setSelectedTokenType(type);
+    setIsSidebarOpen(true);
+  };
+
+  const selectToken = (symbol: string) => {
+    if (selectedTokenType === 'from') {
+      setFromToken(symbol);
+    } else if (selectedTokenType === 'to') {
+      setToToken(symbol);
+    }
+    setIsSidebarOpen(false);
+    setSelectedTokenType(null);
+  };
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
+    <div className="max-w-md mx-auto space-y-6 relative">
       <Card className="vault-card">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
+            Swap Tokens
             <div className="flex items-center space-x-2">
-              <ArrowLeftRight className="h-5 w-5 text-primary" />
-              <span>Swap</span>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Swap Settings</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Slippage Tolerance (%)</Label>
-                    <Input
-                      type="number"
-                      min="0.1"
-                      max="10"
-                      step="0.1"
-                      value={slippage}
-                      onChange={(e) => setSlippage(Number(e.target.value))}
-                      className="mt-1"
-                    />
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Recommended: 0.5-3%. Higher slippage increases chance of execution but may result in worse price.
+              {fromAmount && parseFloat(fromAmount) > 0 && (
+                <span className="text-sm bg-primary p-2 rounded text-primary-foreground font-normal">{countdown}s</span>
+              )}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Swap Settings</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Slippage Tolerance (%)</Label>
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          onClick={() => setSlippage(0.3)}
+                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 0.3
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                        >
+                          0.3%
+                        </button>
+                        <button
+                          onClick={() => setSlippage(0.5)}
+                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 0.5
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                        >
+                          0.5%
+                        </button>
+                        <button
+                          onClick={() => setSlippage(1)}
+                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 1
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                        >
+                          1%
+                        </button>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-3">
+                        Recommended: 0.5-1%. Higher slippage increases chance of execution but may result in worse price.
+                      </div>
                     </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* From Token */}
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">From</label>
             <div className="flex space-x-2">
@@ -389,7 +387,8 @@ const SwapPage: React.FC = () => {
                   value={fromAmount}
                   onChange={(e) => {
                     const value = e.target.value;
-                    const balance = ((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0);
+                    const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                    const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
                     if (parseFloat(value) > balance) {
                       setFromAmount(balance.toString());
                     } else {
@@ -399,45 +398,38 @@ const SwapPage: React.FC = () => {
                   className="text-lg"
                   type="number"
                   min="0"
-                  max={((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0).toFixed(2)}
+                  max={(() => {
+                    const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                    return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toString();
+                  })()}
                   step="any"
                   disabled={tokenListLoading || isLoading}
                 />
               </div>
-              <Select value={fromToken} onValueChange={setFromToken} disabled={tokenListLoading || isLoading}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                  {fromToken && (
+              <Button
+                variant="outline"
+                onClick={() => openSidebar('from')}
+                disabled={tokenListLoading || isLoading}
+                className="w-32 flex items-center justify-between"
+              >
+                {fromToken ? (
+                  <>
                     <img
-                      src={(ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.icon_uri}
+                      src={allTokens.find((t) => t.symbol === fromToken)?.logoUrl}
                       alt={fromToken}
-                      className="h-5 w-5 rounded-full ml-2"
+                      className="h-5 w-5 rounded-full mr-2"
                     />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  <Input
-                    placeholder="Search tokens..."
-                    value={fromSearch}
-                    onChange={(e) => setFromSearch(e.target.value)}
-                    className="mb-2 mx-2"
-                    onKeyDown={(e) => e.stopPropagation()}
-                  />
-                  {filteredFromTokens.map((token) => (
-                    <SelectItem key={token.symbol} value={token.symbol} disabled={token.symbol === toToken}>
-                      <div className="flex items-center space-x-2">
-                        <img src={token.icon_uri} alt={token.symbol} className="h-5 w-5 rounded-full" />
-                        <span className="font-medium">{token.symbol}</span>
-                        <span className="text-xs text-muted-foreground">{token.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {fromToken}
+                  </>
+                ) : 'Select Token'}
+              </Button>
             </div>
             <div className="flex justify-between items-center mt-1">
               <div className="text-xs text-muted-foreground">
-                Balance: {((ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0).toFixed(2)}
+                Balance: {(() => {
+                  const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                  return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toFixed(2);
+                })()}
               </div>
               <div className="flex space-x-1">
                 {[0.25, 0.5, 0.75, 1].map((percentage) => (
@@ -447,7 +439,8 @@ const SwapPage: React.FC = () => {
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={() => {
-                      const balance = (ownedTokens.length > 0 ? ownedTokens : allTokens).find((t) => t.symbol === fromToken)?.amount || 0;
+                      const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                      const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
                       setFromAmount((balance * percentage).toString());
                     }}
                   >
@@ -458,7 +451,6 @@ const SwapPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Swap Button */}
           <div className="flex justify-center">
             <Button
               variant="outline"
@@ -471,7 +463,6 @@ const SwapPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* To Token */}
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">To</label>
             <div className="flex space-x-2">
@@ -484,43 +475,32 @@ const SwapPage: React.FC = () => {
                   disabled={tokenListLoading || isLoading}
                 />
               </div>
-              <Select value={toToken} onValueChange={setToToken} disabled={tokenListLoading || isLoading}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                  {toToken && (
+              <Button
+                variant="outline"
+                onClick={() => openSidebar('to')}
+                disabled={tokenListLoading || isLoading}
+                className="w-32 flex items-center justify-between"
+              >
+                {toToken ? (
+                  <>
                     <img
-                      src={allTokens.find((t) => t.symbol === toToken)?.icon_uri}
+                      src={allTokens.find((t) => t.symbol === toToken)?.logoUrl}
                       alt={toToken}
-                      className="h-5 w-5 rounded-full ml-2"
+                      className="h-5 w-5 rounded-full mr-2"
                     />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  <Input
-                    placeholder="Search tokens..."
-                    value={toSearch}
-                    onChange={(e) => setToSearch(e.target.value)}
-                    className="mb-2 mx-2"
-                    onKeyDown={(e) => e.stopPropagation()}
-                  />
-                  {filteredToTokens.map((token) => (
-                    <SelectItem key={token.symbol} value={token.symbol} disabled={token.symbol === fromToken}>
-                      <div className="flex items-center space-x-2">
-                        <img src={token.icon_uri} alt={token.symbol} className="h-5 w-5 rounded-full" />
-                        <span className="font-medium">{token.symbol}</span>
-                        <span className="text-xs text-muted-foreground">{token.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {toToken}
+                  </>
+                ) : 'Select Token'}
+              </Button>
             </div>
             <div className="text-xs text-muted-foreground">
-              Balance: {ownedTokens.find((t) => t.symbol === toToken)?.amount.toFixed(2) || '0.00'}
+              Balance: {(() => {
+                const tokenData = allTokens.find((t) => t.symbol === toToken);
+                return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toFixed(2);
+              })()}
             </div>
           </div>
 
-          {/* Swap Details */}
           {fromAmount && quoteData.exchangeRate && (
             <div className="space-y-2 p-3 bg-muted rounded-lg">
               <div className="flex justify-between text-sm">
@@ -544,24 +524,77 @@ const SwapPage: React.FC = () => {
             </div>
           )}
 
-          {/* Swap Button */}
-          <Button
+         {connected ? <Button
             className="w-full vault-button"
             disabled={!fromAmount || fromToken === toToken || isLoading || tokenListLoading || !account || !fromToken || !toToken}
             onClick={handleSwap}
           >
-            {isLoading ? 'Processing...' : !account ? 'Connect Wallet' : !fromAmount ? 'Enter Amount' : 'Swap'}
-          </Button>
+            {isLoading ? 'Processing...' : !fromAmount ? 'Enter Amount' : 'Swap'}
+          </Button> : <ShadcnWalletSelector className="w-full vault-button" />}
         </CardContent>
       </Card>
 
-      {/* Powered by Panora */}
       <div className="text-center text-sm text-muted-foreground">
         Powered by{' '}
         <a href="https://panora.exchange" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           Panora
         </a>
       </div>
+
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end"
+          onClick={() => setIsSidebarOpen(false)}
+        >
+          <div
+            className="w-1/3 bg-gray-900 text-white h-full overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-700">
+              <Input
+                placeholder="Search by name, symbol, emoji or address..."
+                value={selectedTokenType === 'from' ? fromSearch : toSearch}
+                onChange={(e) => {
+                  if (selectedTokenType === 'from') setFromSearch(e.target.value);
+                  else setToSearch(e.target.value);
+                }}
+                className="w-full bg-gray-800 text-white border-gray-700"
+              />
+              <Button
+                variant="ghost"
+                onClick={() => setIsSidebarOpen(false)}
+                className="mt-2 text-white"
+              >
+                Close
+              </Button>
+            </div>
+            <div className="p-4 space-y-2">
+              {filteredTokens(selectedTokenType === 'from' ? fromSearch : toSearch, selectedTokenType === 'from' ? toToken : fromToken).map((token) => {
+                const balance = balances.get(token.tokenAddress) || 0;
+                return (
+                  <div
+                    key={token.symbol}
+                    className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
+                    onClick={() => selectToken(token.symbol)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <img src={token.logoUrl} alt={token.symbol} className="h-6 w-6 rounded-full" />
+                      <div>
+                        <div className="font-medium">{token.symbol}</div>
+                        <div className="text-xs text-gray-400">{token.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div>{balance.toFixed(2)}</div>
+                      <div className="text-xs text-gray-400">&lt;$0.01</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

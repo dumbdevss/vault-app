@@ -30,15 +30,21 @@ export interface TokenData {
 }
 
 interface TokenStore {
-  tokens: CombinedTokenData[];
-  setTokens: (tokens: CombinedTokenData[]) => void;
   allTokens: TokenData[];
   setAllTokens: (tokens: TokenData[]) => void;
+  setPortfolioTokens: (tokens: any[]) => void;
+  portfolioTokens: any[];
+  balances: Map<string, number>;
+  setBalances: (balances: Map<string, number>) => void;
 }
 
 export const useTokenStore = create<TokenStore>((set) => ({
-  tokens: [],
   allTokens: [],
-  setTokens: (tokens) => set({ tokens }),
   setAllTokens: (tokens) => set({ allTokens: tokens }),
+  setPortfolioTokens(tokens) {
+    set({ portfolioTokens: tokens });
+  },
+  portfolioTokens: [],
+  balances: new Map(),
+  setBalances: (balances) => set({ balances }),
 }));

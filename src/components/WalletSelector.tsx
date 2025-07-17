@@ -43,7 +43,11 @@ import {
 } from "./ui/dropdown-menu";
 import { useToast } from "./ui/use-toast";
 
-export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
+export interface WalletSelectorProps extends WalletSortingOptions {
+  className?: string;
+}
+
+export function WalletSelector({ className, ...walletSortingOptions }: WalletSelectorProps) {
   const { account, connected, disconnect, wallet } = useWallet();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -101,7 +105,7 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
   ) : (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button>Connect a Wallet</Button>
+        <Button className={className}>Connect a Wallet</Button>
       </DialogTrigger>
       <ConnectWalletDialog close={closeDialog} {...walletSortingOptions} />
     </Dialog>

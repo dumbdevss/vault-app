@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, ExternalLink, TrendingUp, Droplets, Zap, Shield } from 'lucide-react';
+import protocols from '@/utils/protocols.json';
 
 const PlatformsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');

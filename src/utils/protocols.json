@@ -1,0 +1,128 @@
+[
+    {
+      "name": "Hyperion",
+      "description": "The largest DEX on Aptos, combining concentrated liquidity market maker (CLMM) and orderbook functionality for a superior trading experience. Over $100M in TVL and $3B in trading volume.",
+      "website": "https://hyperion.xyz",
+      "features": ["CLMM", "Orderbook", "Liquidity Pools", "Yield Farming"],
+      "mainnet": true,
+      "launched": "2025",
+      "category": ["DEX", "Liquidity", "Orderbook", "Yield Farming"]
+    },
+    {
+      "name": "LiquidSwap",
+      "description": "The first DEX and AMM on Aptos, developed by Pontem Network. Supports token swaps, liquidity pools, yield farming, and cross-chain bridging.",
+      "website": "https://liquidswap.com",
+      "features": ["AMM", "Liquidity Pools", "Yield Farming", "Cross-Chain Bridging"],
+      "mainnet": true,
+      "launched": "2022",
+      "category": ["DEX", "Liquidity", "Yield Farming"]
+    },
+    {
+      "name": "TappExchange",
+      "description": "A modular DEX with a hook-based architecture for customizable DeFi transactions. Integrates with various Aptos-native projects.",
+      "website": "https://tapp.exchange",
+      "features": ["Tapp Hooks", "Modular Architecture", "Composable Liquidity", "Liquidity Pools"],
+      "mainnet": true,
+      "launched": "2025",
+      "category": ["DEX", "Liquidity"]
+    },
+    {
+      "name": "PancakeSwap",
+      "description": "A leading multi-chain DEX, deployed on Aptos with $30M TVL and 59% market dominance on the ecosystem.",
+      "website": "https://pancakeswap.finance",
+      "features": ["AMM", "Liquidity Pools", "Yield Farming", "Staking"],
+      "mainnet": true,
+      "launched": "2022",
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
+    },
+    {
+      "name": "AUXExchange",
+      "description": "Offers both AMM and a central limit order book (CLOB) with advanced trading options like limit orders and no fees on CLOB.",
+      "website": "https://aux.exchange",
+      "features": ["AMM", "CLOB", "Limit Orders", "Liquidity Pools", "Yield Farming"],
+      "mainnet": true,
+      "launched": "2022",
+      "category": ["DEX", "Orderbook", "Liquidity", "Yield Farming"]
+    },
+    {
+      "name": "ThalaSwap",
+      "description": "A DeFi HyperApp by Thala Labs, offering fast, secure trading with low fees, liquidity provision, yield farming, and lending through vaults.",
+      "website": "https://thala.fi",
+      "features": ["AMM", "Liquidity Pools", "Yield Farming", "Lending", "Liquid Staking"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
+    },
+    {
+      "name": "CellanaFinance",
+      "description": "The first Aptos DEX using the Ve(3,3) model, focusing on efficient liquidity provision and trading.",
+      "website": "https://cellana.finance",
+      "features": ["Ve(3,3) Model", "Liquidity Pools", "Yield Farming", "Staking"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
+    },
+    {
+      "name": "KanaLabs",
+      "description": "An AMM-based DEX aggregator supporting cross-chain swaps across nine chains, with gasless swaps on Aptos via Paymaster and perpetual futures trading.",
+      "website": "https://kanalabs.io",
+      "features": ["DEX Aggregator", "Cross-Chain Swaps", "Gasless Swaps", "Perpetual Futures", "Liquidity Pools"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["DEX", "Perps", "Liquidity"]
+    },
+    {
+      "name": "OKXDEX",
+      "description": "A cross-chain DEX and bridge aggregator providing optimal swap rates using the X Routing algorithm.",
+      "website": "https://www.okx.com/dex",
+      "features": ["DEX Aggregator", "Cross-Chain Bridging", "Liquidity Pools"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["DEX", "Liquidity"]
+    },
+    {
+      "name": "Sushi",
+      "description": "A multi-chain AMM DEX deployed across 30+ blockchains, including Aptos, with cross-chain functionality.",
+      "website": "https://sushi.com",
+      "features": ["AMM", "Cross-Chain Swaps", "Liquidity Pools", "Yield Farming"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["DEX", "Liquidity", "Yield Farming"]
+    },
+    {
+      "name": "MerkleTrade",
+      "description": "The first gamified omnichain perpetual DEX on Aptos, supporting up to 150x leverage across 50+ assets and staking for fee sharing.",
+      "website": "https://merkle.trade",
+      "features": ["Perpetual Futures", "Liquidity Pools", "Staking", "Orderbook"],
+      "mainnet": true,
+      "launched": "2023",
+      "category": ["Perps", "Liquidity", "Staking", "Orderbook"]
+    },
+    {
+      "name": "AriesMarkets",
+      "description": "A decentralized derivatives marketplace supporting spot and perpetual futures trading, lending, and borrowing.",
+      "website": "https://aries.markets",
+      "features": ["Perpetual Futures", "Lending", "Borrowing", "Liquidity Pools"],
+      "mainnet": true,
+      "launched": "2022",
+      "category": ["Perps", "Liquidity"]
+    },
+    {
+      "name": "Hippo",
+      "description": "A trading aggregator helping users trade on a single interface with the best price across Aptos DEXs.",
+      "website": "https://hippo.space",
+      "features": ["DEX Aggregator", "Liquidity Pools"],
+      "mainnet": false,
+      "launched": "In Development",
+      "category": ["DEX", "Liquidity"]
+    },
+    {
+        "name": "Panora Exchange",
+        "description": "Panora Exchange is a DEX aggregator that provides users with access to a wide range of DeFi protocols on Aptos.",
+        "website": "https://panora.exchange",
+        "features": ["DEX Aggregator", "Liquidity Pools", "Yield Farming", "Cross-Chain Swaps"],
+        "mainnet": false,
+        "launched": "In Development",
+        "category": ["DEX", "Liquidity", "Yield Farming"]
+    }   
+]
