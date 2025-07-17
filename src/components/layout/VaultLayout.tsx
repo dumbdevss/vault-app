@@ -2,10 +2,6 @@ import React, { ReactNode } from 'react';
 import { isMainnet } from '@/lib';
 import { useIsMobile } from '@/hooks/use-mobile';
 import VaultSidebar from '../VaultSidebar';
-import { MultiAgent } from "@/components/transactionFlows/MultiAgent";
-import { SingleSigner } from "@/components/transactionFlows/SingleSigner";
-import { Sponsor } from "@/components/transactionFlows/Sponsor";
-import { TransactionParameters } from "@/components/transactionFlows/TransactionParameters";
 import { WalletSelector as ShadcnWalletSelector } from "@/components/WalletSelector";
 import VaultTopbar from '../vaultTopbar';
 import VaultBottombar from '../vaultBottombar';
@@ -24,7 +20,7 @@ const VaultLayout = ({ children }: VaultLayoutProps) => {
 
   const handleNetworkSwitch = async () => {
     if (!network) return;
-    const targetNetwork = isMainnet(network?.name) ? Network.TESTNET : Network.MAINNET;
+    const targetNetwork = isMainnet(connected, network?.name) ? Network.TESTNET : Network.MAINNET;
     try {
       await changeNetwork(targetNetwork);
     } catch (error) {
@@ -57,12 +53,12 @@ const VaultLayout = ({ children }: VaultLayoutProps) => {
       <div className="flex-1 transition-all duration-300 pl-16">
         <header className="flex justify-end p-4">
 
-          {connected && isMainnet(network?.name) && (
+          {connected && isMainnet(connected, network?.name) && (
             <button
               onClick={handleNetworkSwitch}
               className="py-2 px-4 bg-gray-700 text-white rounded-md hover:bg-gray-600 mr-4"
             >
-              Switch to {isMainnet(network.name) ? 'Testnet' : 'Mainnet'}
+              Switch to {isMainnet(connected, network?.name) ? 'Testnet' : 'Mainnet'}
             </button>
           )}
           <ShadcnWalletSelector />
