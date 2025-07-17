@@ -1,105 +1,96 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, ExternalLink, TrendingUp, Droplets, Zap, Shield } from 'lucide-react';
+import { Sparkles, TrendingUp, Droplets, DollarSign, BarChart3, Shield } from 'lucide-react';
 import protocols from '@/utils/protocols.json';
+import {Skeleton} from '@/components/ui/skeleton';
 
 const PlatformsPage = () => {
+  const [protocolData, setProtocolData] = useState({});
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const platforms = [
-    {
-      name: 'Cetus Protocol',
-      description: 'Concentrated liquidity DEX on Sui',
-      category: 'DEX',
-      chain: 'Sui',
-      tvl: '$125M',
-      apy: '12.5%',
-      type: 'Liquidity',
-      logo: '🌊',
-      features: ['Concentrated Liquidity', 'Low Fees', 'High Yield']
-    },
-    {
-      name: 'Turbos Finance',
-      description: 'Advanced trading platform on Sui',
-      category: 'DEX',
-      chain: 'Sui',
-      tvl: '$89M',
-      apy: '8.9%',
-      type: 'Trading',
-      logo: '🚀',
-      features: ['Advanced Trading', 'Limit Orders', 'Analytics']
-    },
-    {
-      name: 'Aftermath',
-      description: 'Liquid staking protocol on Sui',
-      category: 'Staking',
-      chain: 'Sui',
-      tvl: '$45M',
-      apy: '6.2%',
-      type: 'Staking',
-      logo: '⚡',
-      features: ['Liquid Staking', 'Auto-compound', 'Governance']
-    },
-    {
-      name: 'Merkle Trade',
-      description: 'Perpetual futures trading',
-      category: 'Perps',
-      chain: 'Multi-chain',
-      tvl: '$78M',
-      apy: '15.3%',
-      type: 'Perps',
-      logo: '📈',
-      features: ['Perpetual Futures', 'Leverage Trading', 'Cross-margin']
-    },
-    {
-      name: 'PancakeSwap',
-      description: 'Leading DEX on multiple chains',
-      category: 'DEX',
-      chain: 'Aptos',
-      tvl: '$1.2B',
-      apy: '15.3%',
-      type: 'Liquidity',
-      logo: '🥞',
-      features: ['Farms', 'Pools', 'Lottery']
-    },
-    {
-      name: 'Thala',
-      description: 'Omnichain liquidity protocol',
-      category: 'DeFi',
-      chain: 'Aptos',
-      tvl: '$234M',
-      apy: '11.8%',
-      type: 'Liquidity',
-      logo: '🔱',
-      features: ['Omnichain', 'Stable Pools', 'Yield Farming']
-    },
-    {
-      name: 'Cellana Finance',
-      description: 'Next-gen AMM on Aptos',
-      category: 'DEX',
-      chain: 'Aptos',
-      tvl: '$156M',
-      apy: '9.4%',
-      type: 'Trading',
-      logo: '🧬',
-      features: ['Advanced AMM', 'Vote Escrow', 'Bribes']
-    }
-  ];
 
   const categories = [
     { id: 'all', name: 'All', icon: Sparkles },
-    { id: 'DEX', name: 'DEX', icon: Droplets },
-    { id: 'Staking', name: 'Staking', icon: Shield },
     { id: 'Perps', name: 'Perps', icon: TrendingUp },
-    { id: 'DeFi', name: 'DeFi', icon: Zap }
+    { id: 'Liquidity', name: 'Liquidity', icon: Droplets },
+    { id: 'Yield Farming', name: 'Yield Farming', icon: DollarSign },
+    { id: 'DEX', name: 'DEX', icon: BarChart3 },
+    { id: 'Staking', name: 'Staking', icon: Shield }
   ];
 
-  const filteredPlatforms = selectedCategory === 'all' 
-    ? platforms 
-    : platforms.filter(p => p.category === selectedCategory);
+  useEffect(() => {
+    const fetchProtocolData = async () => {
+      try {
+        setLoading(true);
+        const dataPromises = protocols.map(async (protocol) => {
+          try {
+            const protocolId = protocol.llama_id || protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            // Fetch TVL data
+            const tvlResponse = await fetch(`https://api.llama.fi/protocol/${protocolId}`);
+            const tvlData = await tvlResponse.json();
+            if (!tvlResponse.ok) throw new Error('TVL fetch failed');
+
+            let query = {
+              excludeTotalDataChart: 'false',
+              excludeTotalDataChartBreakdown: 'false',
+            };
+            const queryString = new URLSearchParams(query);
+            // Fetch volume data
+            const volumeResponse = await fetch(`https://api.llama.fi/summary/dexs/${protocolId}?${queryString}`);
+            const volumeData = await volumeResponse.json();
+            if (!volumeResponse.ok) throw new Error('Volume fetch failed');
+
+            const aptosTvls = tvlData.chainTvls?.Aptos?.tvl || [];
+            const lastTwoTvls = aptosTvls.slice(-2);
+            const change_1d = lastTwoTvls.length === 2 
+              ? ((lastTwoTvls[1].totalLiquidityUSD - lastTwoTvls[0].totalLiquidityUSD) / lastTwoTvls[0].totalLiquidityUSD * 100)
+              : 0;
+
+            return {
+              id: protocolId,
+              tvl: tvlData.currentChainTvls?.Aptos || 0,
+              volume24h: volumeData.total24h || 0,
+              change_1d: isNaN(change_1d) ? 0 : change_1d
+            };
+          } catch (error) {
+            console.error(`Error fetching data for ${protocol.name}:`, error);
+            return {
+              id: protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+              tvl: 0,
+              volume24h: 0,
+              change_1d: 0
+            };
+          }
+        });
+
+        const results = await Promise.all(dataPromises);
+        const dataMap = results.reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, {});
+        setProtocolData(dataMap);
+      } catch (error) {
+        console.error('Error fetching protocol data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProtocolData();
+  }, []);
+
+  const formatNumber = (num) => {
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(1)}K`;
+    return `$${num.toFixed(0)}`;
+  };
+
+  const filteredProtocols = selectedCategory === 'all'
+    ? protocols
+    : protocols.filter(p => p.category.includes(selectedCategory));
 
   return (
     <div className="space-y-6">
@@ -113,77 +104,70 @@ const PlatformsPage = () => {
         </p>
       </div>
 
-      {/* Category Filters */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
+
+
+      <div className="flex items-center space-x-2 mb-4">
+        {categories.map(category => (
           <Button
             key={category.id}
-            variant={selectedCategory === category.id ? "default" : "outline"}
+            variant={selectedCategory === category.id ? 'secondary' : 'outline'}
             onClick={() => setSelectedCategory(category.id)}
-            className="flex items-center space-x-2"
+            className="capitalize flex items-center space-x-2"
           >
             <category.icon className="h-4 w-4" />
             <span>{category.name}</span>
           </Button>
         ))}
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredProtocols.map((protocol, index) => {
+          const protocolId = protocol.llama_id || protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          const data = protocolData[protocolId] || { tvl: 0, volume24h: 0, change_1d: 0 };
+          const isPositiveChange = data.change_1d >= 0;
 
-      {/* Platform Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredPlatforms.map((platform, index) => (
-          <Card key={index} className="vault-card hover:bg-accent/50 transition-colors cursor-pointer">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-2xl">{platform.logo}</div>
-                  <div>
-                    <CardTitle className="text-lg">{platform.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{platform.description}</p>
+          return (
+            <Card key={index} className="hover:bg-accent/50 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-3 rounded-md bg-white">
+                    <img src={protocol.logo} alt={protocol.name} className="w-8 h-8" />
                   </div>
+                  <CardTitle className="text-lg">{protocol.name}</CardTitle>
+                  <span className="text-muted-foreground text-sm">✓</span>
                 </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Badge variant="secondary">{platform.category}</Badge>
-                <Badge variant="outline">{platform.chain}</Badge>
-                <Badge variant="outline">{platform.type}</Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">TVL</p>
-                  <p className="font-bold text-lg">{platform.tvl}</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {loading ? (
+                  <Skeleton className="h-6 w-full" />
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">TVL</span>
+                      <div className="flex items-center space-x-1">
+                        <span className="font-bold text-lg">{formatNumber(data.tvl)}</span>
+                        {data.change_1d !== undefined && (
+                          <span className={`text-xs ${isPositiveChange ? 'text-green-600' : 'text-red-600'}`}>
+                            {isPositiveChange ? '+' : ''}{data.change_1d.toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">VOLUME(24H)</span>
+                      <span className="font-bold text-lg text-primary">
+                        {formatNumber(data.volume24h)}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex space-x-2">
+                  <Button variant="outline" className="flex-1 capitalize">{protocol.tag}</Button>
+                  <Button className="flex-1 bg-black text-white">Use on Vault</Button>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">APY</p>
-                  <p className="font-bold text-lg text-primary">{platform.apy}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Features</p>
-                <div className="flex flex-wrap gap-1">
-                  {platform.features.map((feature, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button className="flex-1 vault-button">
-                  Connect
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  Learn More
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

@@ -4,45 +4,48 @@
       "description": "The largest DEX on Aptos, combining concentrated liquidity market maker (CLMM) and orderbook functionality for a superior trading experience. Over $100M in TVL and $3B in trading volume.",
       "website": "https://hyperion.xyz",
       "features": ["CLMM", "Orderbook", "Liquidity Pools", "Yield Farming"],
+     "logo": "https://icons.llama.fi/hyperion.jpg",
       "mainnet": true,
+      "tag": "DEXS",
       "launched": "2025",
-      "category": ["DEX", "Liquidity", "Orderbook", "Yield Farming"]
+      "category": ["DEX", "Liquidity", "Orderbook", "Yield Farming"],
+      "llama_id": "hyperion"
     },
     {
       "name": "LiquidSwap",
       "description": "The first DEX and AMM on Aptos, developed by Pontem Network. Supports token swaps, liquidity pools, yield farming, and cross-chain bridging.",
       "website": "https://liquidswap.com",
       "features": ["AMM", "Liquidity Pools", "Yield Farming", "Cross-Chain Bridging"],
+      "logo": "https://icons.llama.fi/liquidswap.jpg",
       "mainnet": true,
+      "tag": "DEXS",
       "launched": "2022",
-      "category": ["DEX", "Liquidity", "Yield Farming"]
+      "category": ["DEX", "Liquidity", "Yield Farming"],
+      "llama_id": "liquidswap"
     },
     {
       "name": "TappExchange",
       "description": "A modular DEX with a hook-based architecture for customizable DeFi transactions. Integrates with various Aptos-native projects.",
       "website": "https://tapp.exchange",
       "features": ["Tapp Hooks", "Modular Architecture", "Composable Liquidity", "Liquidity Pools"],
+      "logo": "https://icons.llama.fi/tapp-exchange.jpg",
       "mainnet": true,
+      "tag": "DEXS",
       "launched": "2025",
-      "category": ["DEX", "Liquidity"]
+      "category": ["DEX", "Liquidity"],
+      "llama_id": "tapp-exchange"
     },
     {
       "name": "PancakeSwap",
       "description": "A leading multi-chain DEX, deployed on Aptos with $30M TVL and 59% market dominance on the ecosystem.",
       "website": "https://pancakeswap.finance",
       "features": ["AMM", "Liquidity Pools", "Yield Farming", "Staking"],
+      "logo": "https://icons.llama.fi/pancakeswap.jpg",
       "mainnet": true,
+      "tag": "DEXS",
       "launched": "2022",
-      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
-    },
-    {
-      "name": "AUXExchange",
-      "description": "Offers both AMM and a central limit order book (CLOB) with advanced trading options like limit orders and no fees on CLOB.",
-      "website": "https://aux.exchange",
-      "features": ["AMM", "CLOB", "Limit Orders", "Liquidity Pools", "Yield Farming"],
-      "mainnet": true,
-      "launched": "2022",
-      "category": ["DEX", "Orderbook", "Liquidity", "Yield Farming"]
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"],
+      "llama_id": "pancakeswap"
     },
     {
       "name": "ThalaSwap",
@@ -50,8 +53,11 @@
       "website": "https://thala.fi",
       "features": ["AMM", "Liquidity Pools", "Yield Farming", "Lending", "Liquid Staking"],
       "mainnet": true,
+      "tag": "DEXS",
+      "logo": "https://icons.llama.fi/thala.jpg",
       "launched": "2023",
-      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"],
+      "llama_id": "thala"
     },
     {
       "name": "CellanaFinance",
@@ -59,8 +65,11 @@
       "website": "https://cellana.finance",
       "features": ["Ve(3,3) Model", "Liquidity Pools", "Yield Farming", "Staking"],
       "mainnet": true,
+      "tag": "DEXS",
       "launched": "2023",
-      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"]
+      "logo": "https://icons.llama.fi/cellana-finance.jpg",
+      "category": ["DEX", "Liquidity", "Yield Farming", "Staking"],
+      "llama_id": "cellana-finance"
     },
     {
       "name": "KanaLabs",
@@ -68,17 +77,11 @@
       "website": "https://kanalabs.io",
       "features": ["DEX Aggregator", "Cross-Chain Swaps", "Gasless Swaps", "Perpetual Futures", "Liquidity Pools"],
       "mainnet": true,
+      "logo": "https://icons.llama.fi/kana-labs.jpg",
       "launched": "2023",
-      "category": ["DEX", "Perps", "Liquidity"]
-    },
-    {
-      "name": "OKXDEX",
-      "description": "A cross-chain DEX and bridge aggregator providing optimal swap rates using the X Routing algorithm.",
-      "website": "https://www.okx.com/dex",
-      "features": ["DEX Aggregator", "Cross-Chain Bridging", "Liquidity Pools"],
-      "mainnet": true,
-      "launched": "2023",
-      "category": ["DEX", "Liquidity"]
+      "tag": "DEXS",
+      "category": ["DEX", "Perps", "Liquidity"],
+      "llama_id": "kana-labs"
     },
     {
       "name": "Sushi",
@@ -87,7 +90,10 @@
       "features": ["AMM", "Cross-Chain Swaps", "Liquidity Pools", "Yield Farming"],
       "mainnet": true,
       "launched": "2023",
-      "category": ["DEX", "Liquidity", "Yield Farming"]
+      "tag": "DEXS",
+      "logo": "https://icons.llama.fi/sushi.jpg",
+      "category": ["DEX", "Liquidity", "Yield Farming"],
+      "llama_id": "sushi"
     },
     {
       "name": "MerkleTrade",
@@ -96,7 +102,10 @@
       "features": ["Perpetual Futures", "Liquidity Pools", "Staking", "Orderbook"],
       "mainnet": true,
       "launched": "2023",
-      "category": ["Perps", "Liquidity", "Staking", "Orderbook"]
+      "tag": "Perps",
+      "logo": "https://icons.llama.fi/merkle-trade.jpg",
+      "category": ["Perps", "Liquidity", "Staking", "Orderbook"],
+      "llama_id": "merkle-trade"
     },
     {
       "name": "AriesMarkets",
@@ -104,17 +113,11 @@
       "website": "https://aries.markets",
       "features": ["Perpetual Futures", "Lending", "Borrowing", "Liquidity Pools"],
       "mainnet": true,
+      "logo": "https://icons.llama.fi/aries-markets.jpg",
       "launched": "2022",
-      "category": ["Perps", "Liquidity"]
-    },
-    {
-      "name": "Hippo",
-      "description": "A trading aggregator helping users trade on a single interface with the best price across Aptos DEXs.",
-      "website": "https://hippo.space",
-      "features": ["DEX Aggregator", "Liquidity Pools"],
-      "mainnet": false,
-      "launched": "In Development",
-      "category": ["DEX", "Liquidity"]
+      "tag": "Perps",
+      "category": ["Perps", "Liquidity"],
+      "llama_id": "aries-markets"
     },
     {
         "name": "Panora Exchange",
@@ -123,6 +126,9 @@
         "features": ["DEX Aggregator", "Liquidity Pools", "Yield Farming", "Cross-Chain Swaps"],
         "mainnet": false,
         "launched": "In Development",
-        "category": ["DEX", "Liquidity", "Yield Farming"]
+        "tag": "Dexs",
+        "category": ["DEX", "Liquidity", "Yield Farming"],
+        "logo": "https://icons.llama.fi/panora.jpg",
+        "llama_id": "panora"
     }   
 ]
