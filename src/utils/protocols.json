@@ -113,7 +113,7 @@
       "website": "https://ariesmarkets.xyz/",
       "features": ["Perpetual Futures", "Lending", "Borrowing", "Liquidity Pools"],
       "mainnet": true,
-      "logo": "",
+      "logo": "https://docs.ariesmarkets.xyz/aries-markets/~gitbook/image?url=https%3A%2F%2F1291605623-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FOy7zBwpUyqcE5lJO4gF4%252Ficon%252FSU5NBBWhZeRkoR53sBC6%252FIcon%2520-%2520Black%2520-%2520Aries%2520Markets.png%3Falt%3Dmedia%26token%3D8dd2ad8b-fa17-40c4-8e45-545be708eff7&width=32&dpr=2&quality=100&sign=4adaf63c&sv=2",
       "launched": "2022",
       "tag": "Perps",
       "category": ["Perps", "Liquidity"],

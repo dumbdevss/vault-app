@@ -8,14 +8,10 @@ import SwapPage from "./pages/SwapPage";
 import SendPage from "./pages/SendPage";
 import PlatformsPage from "./pages/PlatformsPage";
 import NFTsPage from "./pages/NFTsPage";
+import NotFoundPage from './pages/not_found';
+import HyperionPage from './pages/platforms/hyperion';
 import { useEffect } from "react";
 
-
-const metadata = {
-  title: 'Vault',
-  description: 'Decentralized Finance (DeFi) Platform',
-  
-};
 
 // Application main component
 const App = () => {
@@ -32,8 +28,11 @@ const App = () => {
               <Route path="/" element={<PortfolioPage />} />
               <Route path="/swap" element={<SwapPage />} />
               <Route path="/send" element={<SendPage />} />
-              <Route path="/platforms" element={<PlatformsPage />} />
+              <Route path="/platforms" element={<PlatformsPage />}>
+                <Route path="hyperion" element={<HyperionPage />} />
+              </Route>
               <Route path="/nfts" element={<NFTsPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </VaultLayout>
         </TooltipProvider>

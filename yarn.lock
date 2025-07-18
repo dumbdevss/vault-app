@@ -133,7 +133,7 @@
   dependencies:
     "@aptos-labs/wallet-standard" "^0.5.0"
 
-"@aptos-labs/derived-wallet-ethereum@workspace:^":
+"@aptos-labs/derived-wallet-ethereum@^0.5.1":
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/@aptos-labs/derived-wallet-ethereum/-/derived-wallet-ethereum-0.5.1.tgz#3bdaf2af203753294b0968129c435bbcd94f6cbe"
   integrity sha512-ywbLg9xyTjuk+8lVrV84Yq6YEArVr7oOJTevPCSZZLOgSK1Nh1q9ANE5BcTCuwGZdQ4oXLEp3qpZOY+4o4fUOw==
@@ -146,7 +146,7 @@
     mipd "^0.0.7"
     viem "^2.23.12"
 
-"@aptos-labs/derived-wallet-solana@workspace:^":
+"@aptos-labs/derived-wallet-solana@^0.5.1":
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/@aptos-labs/derived-wallet-solana/-/derived-wallet-solana-0.5.1.tgz#706ba2042949fab803e1c0a7fb5f4755b9fe7d9f"
   integrity sha512-fkWfadluGK9geD8+U1UZIhrV4fMSOcB0bzGfq10Sb9FS3htw61IX0f0ng5dZ2Zpk5KgFdcEOXEWo3ztIgNO+yA==
@@ -168,7 +168,7 @@
     "@aptos-labs/wallet-standard" ">=0.5.0"
     "@noble/hashes" "^1.7.1"
 
-"@aptos-labs/ts-sdk@^3.1.2":
+"@aptos-labs/ts-sdk@^3.1.2", "@aptos-labs/ts-sdk@latest":
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/@aptos-labs/ts-sdk/-/ts-sdk-3.1.3.tgz#65423d7b58738b89a47254887d16c6b6f03de55a"
   integrity sha512-42CiChUnHzsZXE25p3gPiETFUTlchTd20zl9vAiq6es1vQaaf95LvVQ0q3GxeOgmW9ENn2q72gAsuGLIOYRohg==
@@ -185,7 +185,7 @@
     jwt-decode "^4.0.0"
     poseidon-lite "^0.2.0"
 
-"@aptos-labs/wallet-adapter-ant-design@workspace:*":
+"@aptos-labs/wallet-adapter-ant-design@^5.1.0":
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/@aptos-labs/wallet-adapter-ant-design/-/wallet-adapter-ant-design-5.1.0.tgz#be4c93cb48fb19ff81c4df75eb38c1a1d5ab92de"
   integrity sha512-YKNX/8erSFbg+F4W4IJQWz2CdP0fyQCvC7HUcGdtxip+LHDSzqpxKdoihHzTv0qZP4E6yMqtk+upFCJDjTlwdA==
@@ -194,7 +194,7 @@
     "@aptos-labs/wallet-adapter-react" "7.0.1"
     antd "^5.18.3"
 
-"@aptos-labs/wallet-adapter-core@6.0.1", "@aptos-labs/wallet-adapter-core@workspace:*":
+"@aptos-labs/wallet-adapter-core@6.0.1", "@aptos-labs/wallet-adapter-core@^6.0.1":
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/@aptos-labs/wallet-adapter-core/-/wallet-adapter-core-6.0.1.tgz#d95e4101b0b70599b34b80f84b19c4ddee82a362"
   integrity sha512-NdBikjllOlVVG6mnG+mp5didiKhB8VKaj0iY9jOVW+yBIiTR4GL4UrYJ2EGPQV9Q0jxlSvePFh5zaqmFYsYt6g==
@@ -206,7 +206,7 @@
     eventemitter3 "^4.0.7"
     tweetnacl "^1.0.3"
 
-"@aptos-labs/wallet-adapter-mui-design@workspace:*":
+"@aptos-labs/wallet-adapter-mui-design@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@aptos-labs/wallet-adapter-mui-design/-/wallet-adapter-mui-design-5.0.1.tgz#76c21042cab1d12d8c074c44a050fcc4355da814"
   integrity sha512-G3MmaKlOd4PSTJytFjX0VrQxrlqiN9qQEZktBQVzGR5wOBNZolCmqqx88OTRiF7kTludUu1k7KH5aUUEWKeJYQ==
@@ -217,7 +217,7 @@
     "@mui/icons-material" "^5.11.0"
     "@mui/material" "^5.11.6"
 
-"@aptos-labs/wallet-adapter-react@7.0.1", "@aptos-labs/wallet-adapter-react@workspace:*":
+"@aptos-labs/wallet-adapter-react@7.0.1", "@aptos-labs/wallet-adapter-react@^7.0.1":
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/@aptos-labs/wallet-adapter-react/-/wallet-adapter-react-7.0.1.tgz#6464b2114978afd3752c9207c3a79aff09b79412"
   integrity sha512-6+XbePMeJF8m6WF10h75RW7nsjKa8sY1FjVM2rR4u/P305xxyzbAqUbZdFWhmpTzeHFuT6DScceSZcoM0gJrOA==
@@ -807,6 +807,16 @@
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.3.tgz#c2b9d2e374ee62c586d3adbea87199b1d7a7a6ba"
   integrity sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==
+
+"@hyperionxyz/sdk@^0.0.16":
+  version "0.0.16"
+  resolved "https://registry.yarnpkg.com/@hyperionxyz/sdk/-/sdk-0.0.16.tgz#0e06b9ee82a59a38d0e743a90a6711035d4f4493"
+  integrity sha512-OpQiMRmR5dwQvYsshDEK6BGnhxGUK0RUi+YZ7tTSdQ/Fu2xnK1QRN0ang616tFneEF/wfw/yKCEVELb1Oseczw==
+  dependencies:
+    aptos-tool "^0.0.8"
+    bignumber.js "^9.1.2"
+    graphql-request "^7.1.2"
+    long "^5.3.1"
 
 "@identity-connect/api@^0.7.0":
   version "0.7.0"
@@ -2641,6 +2651,14 @@ anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
+aptos-tool@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/aptos-tool/-/aptos-tool-0.0.8.tgz#eacc608e4d29ab9dfb910528173612e7c3e275c4"
+  integrity sha512-1V4WswhESOVFdd5EMAljVQ22ZJf+HyBe1xcT3NIvpdx7iO6khQZo7t+97drr2Bk5A7HIZwtEX1JemK9D2HrZCA==
+  dependencies:
+    "@aptos-labs/ts-sdk" latest
+    bignumber.js "^9.1.2"
+
 aptos@^1.21.0:
   version "1.21.0"
   resolved "https://registry.yarnpkg.com/aptos/-/aptos-1.21.0.tgz#346623967a6d038a85f02d71ed6ec62c4cd2ae5e"
@@ -2737,6 +2755,11 @@ better-promises@^0.4.1:
   integrity sha512-cDW7eMvhvCoWzSih5o/OxsAgTUfP05yGMq77xNZUTmcZoNU9vEeFZJ+yJJi4lnocvxFrVFKsG0Yxt7ZnuYJEig==
   dependencies:
     error-kid "^0.0.7"
+
+bignumber.js@^9.1.2:
+  version "9.3.1"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.3.1.tgz#759c5aaddf2ffdc4f154f7b493e1c8770f88c4d7"
+  integrity sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==
 
 binary-extensions@^2.0.0:
   version "2.3.0"
@@ -4006,6 +4029,11 @@ lodash@^4.17.21:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
+
+long@^5.3.1:
+  version "5.3.2"
+  resolved "https://registry.yarnpkg.com/long/-/long-5.3.2.tgz#1d84463095999262d7d7b7f8bfd4a8cc55167f83"
+  integrity sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==
 
 loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"

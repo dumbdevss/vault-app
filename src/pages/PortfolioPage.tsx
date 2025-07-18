@@ -212,10 +212,8 @@ const PortfolioPage = () => {
     enabled: connected && !!ownerAddress,
   });
 
-
   // Combine token data
   const combinedData = balances?.map((balance) => {
-    console.log(tokenList);
     const tokenInfo = tokenList?.find((t) => t.faAddress === balance.asset_type || t.tokenAddress === balance.asset_type);
     return {
       ...balance,
@@ -224,10 +222,13 @@ const PortfolioPage = () => {
       decimals: tokenInfo?.decimals || balance.metadata?.decimals || 0,
       usdPrice: tokenInfo?.usdPrice || '0',
       icon_uri: tokenInfo?.logoUrl || balance.metadata?.icon_uri || '',
+      tokenAddress: balance.asset_type,
     };
   }) || [];
 
-  setPortfolioTokens(combinedData);
+  useEffect(() => {
+    setPortfolioTokens(combinedData);
+  }, [JSON.stringify(combinedData)]);
 
   // Calculate total portfolio value
   const totalPortfolioValue = combinedData.reduce((acc, token) => {

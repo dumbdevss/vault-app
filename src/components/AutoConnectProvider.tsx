@@ -25,7 +25,7 @@ export function useAutoConnect(): AutoConnectContextState {
 export const AutoConnectProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [autoConnect, setAutoConnect] = useState(false);
+  const [autoConnect, setAutoConnect] = useState(true);
 
   useEffect(() => {
     // Wait until the app hydrates before populating `autoConnect` from local storage

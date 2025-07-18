@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Droplets, DollarSign, BarChart3, Shield } from 'lucide-react';
@@ -9,6 +10,8 @@ const PlatformsPage = () => {
   const [protocolData, setProtocolData] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const categories = [
     { id: 'all', name: 'All', icon: Sparkles },
@@ -92,6 +95,12 @@ const PlatformsPage = () => {
     ? protocols
     : protocols.filter(p => p.category.includes(selectedCategory));
 
+  const isPlatformDetailsPage = location.pathname.split('/').length > 2;
+
+  if (isPlatformDetailsPage) {
+    return <Outlet />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4">
@@ -129,11 +138,11 @@ const PlatformsPage = () => {
             <Card key={index} className="hover:bg-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="flex items-center space-x-2">
-                  <div className="p-3 rounded-md bg-white">
+                  <div className="p-2 rounded-md bg-white">
                     <img src={protocol.logo} alt={protocol.name} className="w-8 h-8" />
                   </div>
                   <CardTitle className="text-lg">{protocol.name}</CardTitle>
-                  <span className="text-muted-foreground text-sm">✓</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" className="size-6 text-primary" data-sentry-element="SealCheck" data-sentry-source-file="platforms-grid.tsx"><path d="M225.86,102.82c-3.77-3.94-7.67-8-9.14-11.57-1.36-3.27-1.44-8.69-1.52-13.94-.15-9.76-.31-20.82-8-28.51s-18.75-7.85-28.51-8c-5.25-.08-10.67-.16-13.94-1.52-3.56-1.47-7.63-5.37-11.57-9.14C146.28,23.51,138.44,16,128,16s-18.27,7.51-25.18,14.14c-3.94,3.77-8,7.67-11.57,9.14C88,40.64,82.56,40.72,77.31,40.8c-9.76.15-20.82.31-28.51,8S41,67.55,40.8,77.31c-.08,5.25-.16,10.67-1.52,13.94-1.47,3.56-5.37,7.63-9.14,11.57C23.51,109.72,16,117.56,16,128s7.51,18.27,14.14,25.18c3.77,3.94,7.67,8,9.14,11.57,1.36,3.27,1.44,8.69,1.52,13.94.15,9.76.31,20.82,8,28.51s18.75,7.85,28.51,8c5.25.08,10.67.16,13.94,1.52,3.56,1.47,7.63,5.37,11.57,9.14C109.72,232.49,117.56,240,128,240s18.27-7.51,25.18-14.14c3.94-3.77,8-7.67,11.57-9.14,3.27-1.36,8.69-1.44,13.94-1.52,9.76-.15,20.82-.31,28.51-8s7.85-18.75,8-28.51c.08-5.25.16-10.67,1.52-13.94,1.47-3.56,5.37-7.63,9.14-11.57C232.49,146.28,240,138.44,240,128S232.49,109.73,225.86,102.82Zm-52.2,6.84-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"></path></svg>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -161,8 +170,8 @@ const PlatformsPage = () => {
                   </>
                 )}
                 <div className="flex space-x-2">
-                  <Button variant="outline" className="flex-1 capitalize">{protocol.tag}</Button>
-                  <Button className="flex-1 bg-black text-white">Use on Vault</Button>
+                  <Button variant="outline" className="flex-1"><span className="capitalize">{protocol.tag}</span></Button>
+                  <Button onClick={() => navigate(`/platforms/${protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`)} className="flex-1 bg-black text-white">Use on Vault</Button>
                 </div>
               </CardContent>
             </Card>

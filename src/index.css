@@ -54,6 +54,7 @@
     background-attachment: fixed;
     background-repeat: no-repeat;
     min-height: 100vh;
+    overflow-x: hidden
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -80,6 +81,10 @@
 
   .vault-card {
     @apply bg-card/80 backdrop-blur-sm rounded-lg border border-border;
+  }
+
+  .vault-card-gradient {
+    @apply backdrop-blur-sm;
   }
 
   .vault-button {
