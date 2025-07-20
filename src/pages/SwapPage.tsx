@@ -43,7 +43,7 @@ const SwapPage: React.FC = () => {
   const panoraApiKey = import.meta.env.VITE_PANORA_API_KEY || '';
   const baseUrl = 'https://api.panora.exchange';
   const integratorFeeAddress = import.meta.env.VITE_PANORA_INTEGRATOR_FEE_ADDRESS || '';
-  const integratorFeePercentage = parseFloat(import.meta.env.VITE_PANORA_INTEGRATOR_FEE_PERCENTAGE || '1');
+  const integratorFeePercentage = parseFloat(import.meta.env.VITE_PANORA_INTEGRATOR_FEE_PERCENTAGE || '0.1');
 
   // Ensure consistent token address field
   const getTokenAddress = (symbol: string): string => {
@@ -440,8 +440,8 @@ const SwapPage: React.FC = () => {
                             key={value}
                             onClick={() => setSlippage(value)}
                             className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === value
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                               }`}
                           >
                             {value}%
@@ -683,17 +683,15 @@ const SwapPage: React.FC = () => {
               Close
             </Button>
           </div>
-
-          <div className="text-center text-xs text-muted-foreground">Showing result for {filteredTokens.length} tokens</div>
-
           <div className="p-4 space-y-2">
-            {filteredTokens.map((token) => {
+          {(() => {
+            return filteredTokens.map((token, i) => {
               const balance = balances.get(token.tokenAddress) || 0;
               const usdPrice = tokenPrices.get(token.faAddress) || tokenPrices.get(token.tokenAddress) || 0;
               const usdBalance = balance * usdPrice;
               return (
                 <div
-                  key={token.symbol}
+                  key={i}
                   className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
                   onClick={() => selectToken(token.symbol)}
                 >
@@ -709,8 +707,10 @@ const SwapPage: React.FC = () => {
                     <div className="text-xs text-gray-400">{usdPrice > 0 ? `$${usdBalance.toFixed(2)}` : '<$0.01'}</div>
                   </div>
                 </div>
+                // <p>{token.symbol}</p>
               );
-            })}
+            });
+          })()}
           </div>
         </div>
       </div>
