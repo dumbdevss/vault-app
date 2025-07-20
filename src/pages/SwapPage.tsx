@@ -406,6 +406,11 @@ const SwapPage: React.FC = () => {
       setToToken(symbol);
     }
     setIsSidebarOpen(false);
+    if(selectedTokenType === 'from'){
+      setFromSearch('');
+    }else if(selectedTokenType === 'to'){
+      setToSearch('');
+    }
     setSelectedTokenType(null);
   };
 
@@ -644,7 +649,15 @@ const SwapPage: React.FC = () => {
 
       <div
         className={isSidebarOpen ? "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" : "hidden"}
-        onClick={() => setIsSidebarOpen(false)}
+        onClick={() => {
+          setIsSidebarOpen(false);
+          if(selectedTokenType === 'from'){
+            setFromSearch('');
+          }else if(selectedTokenType === 'to'){
+            setToSearch('');
+          }
+          setSelectedTokenType(null);
+        }}
       >
         <div
           className="w-1/3 bg-gray-900 text-white h-full overflow-y-auto"
@@ -677,7 +690,15 @@ const SwapPage: React.FC = () => {
             />
             <Button
               variant="ghost"
-              onClick={() => setIsSidebarOpen(false)}
+              onClick={() => {
+                setIsSidebarOpen(false);
+                if(selectedTokenType === 'from'){
+                  setFromSearch('');
+                }else if(selectedTokenType === 'to'){
+                  setToSearch('');
+                }
+                setSelectedTokenType(null);
+              }}
               className="mt-2 text-white"
             >
               Close
