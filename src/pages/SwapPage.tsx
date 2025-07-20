@@ -411,6 +411,7 @@ const SwapPage: React.FC = () => {
     }else if(selectedTokenType === 'to'){
       setToSearch('');
     }
+    setFilteredTokens(allTokens);
     setSelectedTokenType(null);
   };
 
@@ -656,6 +657,7 @@ const SwapPage: React.FC = () => {
           }else if(selectedTokenType === 'to'){
             setToSearch('');
           }
+          setFilteredTokens(allTokens);
           setSelectedTokenType(null);
         }}
       >
@@ -697,6 +699,7 @@ const SwapPage: React.FC = () => {
                 }else if(selectedTokenType === 'to'){
                   setToSearch('');
                 }
+                setFilteredTokens(allTokens);
                 setSelectedTokenType(null);
               }}
               className="mt-2 text-white"
