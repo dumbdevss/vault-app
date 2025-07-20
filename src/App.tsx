@@ -10,6 +10,8 @@ import PlatformsPage from "./pages/PlatformsPage";
 import NFTsPage from "./pages/NFTsPage";
 import NotFoundPage from './pages/not_found';
 import HyperionPage from './pages/platforms/hyperion';
+import LiquidSwapPage from './pages/platforms/liquidswap';
+import TappExchangePage from './pages/platforms/tappexchange';
 import { useEffect } from "react";
 
 
@@ -30,6 +32,8 @@ const App = () => {
               <Route path="/send" element={<SendPage />} />
               <Route path="/platforms" element={<PlatformsPage />}>
                 <Route path="hyperion" element={<HyperionPage />} />
+                <Route path="liquidswap" element={<LiquidSwapPage />} />
+                <Route path="tappexchange" element={<TappExchangePage />} />
               </Route>
               <Route path="/nfts" element={<NFTsPage />} />
               <Route path="*" element={<NotFoundPage />} />

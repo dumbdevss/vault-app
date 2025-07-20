@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-core";
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { aptosClient } from '@/lib';
 import { TransactionHash } from "../components/TransactionHash";
 import tokens from '@/utils/tokens.json';
 import { WalletSelector as ShadcnWalletSelector } from '@/components/WalletSelector';
-import { TokenData } from '@/store/tokenStore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const SwapPage: React.FC = () => {
   const [fromAmount, setFromAmount] = useState('');
@@ -37,44 +37,46 @@ const SwapPage: React.FC = () => {
 
   const { account, connected, network, signAndSubmitTransaction } = useWallet();
   const { allTokens, setAllTokens, balances, setBalances } = useTokenStore();
-  const [tokenListLoading, setTokenListLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [filteredTokens, setFilteredTokens] = useState(allTokens);
 
   const panoraApiKey = import.meta.env.VITE_PANORA_API_KEY || '';
   const baseUrl = 'https://api.panora.exchange';
   const integratorFeeAddress = import.meta.env.VITE_PANORA_INTEGRATOR_FEE_ADDRESS || '';
   const integratorFeePercentage = parseFloat(import.meta.env.VITE_PANORA_INTEGRATOR_FEE_PERCENTAGE || '1');
 
+  // Ensure consistent token address field
   const getTokenAddress = (symbol: string): string => {
-    return allTokens.find((t) => t.symbol === symbol)?.faAddress || '';
+    const token = allTokens.find((t) => t.symbol === symbol);
+    return token?.tokenAddress || token?.faAddress || ''; // Fallback to empty string
   };
 
   const ownerAddress = account?.address && typeof account.address === 'object' && 'data' in account.address
     ? toHexString((account.address as any).data)
-    : account?.address;
+    : account?.address || '';
 
+  // Validate network and set indexer URL
   const aptosIndexerUrl = network?.name === 'testnet'
     ? import.meta.env.VITE_APTOS_TESTNET_INDEXER
-    : import.meta.env.VITE_APTOS_MAINNET_INDEXER;
+    : import.meta.env.VITE_APTOS_MAINNET_INDEXER || 'https://default-indexer-url'; // Add default fallback
 
   const chainId = network?.name === 'mainnet' ? '1' : '2';
 
-  const fetchQuote = useCallback(async () => {
-    if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
-      setToAmount('');
-      setQuoteData({});
-      return;
-    }
+  // Fetch quote using TanStack Query
+  const quoteMutation = useMutation({
+    mutationFn: async () => {
+      if (!fromAmount || !ownerAddress || fromToken === toToken || !fromToken || !toToken) {
+        throw new Error('Invalid parameters');
+      }
 
-    setIsLoading(true);
-    try {
       const params = new URLSearchParams({
         chainId,
-        fromTokenAddress: getTokenAddress(fromToken!),
-        toTokenAddress: getTokenAddress(toToken!),
+        fromTokenAddress: getTokenAddress(fromToken) as string,
+        toTokenAddress: getTokenAddress(toToken) as string,
         fromTokenAmount: fromAmount,
         toWalletAddress: ownerAddress as string,
         slippagePercentage: slippage.toString(),
-        integratorFeeAddress,
+        integratorFeeAddress: integratorFeeAddress as string,
         integratorFeePercentage: integratorFeePercentage.toString(),
       });
 
@@ -93,138 +95,229 @@ const SwapPage: React.FC = () => {
       const exchangeRate = parseFloat(quote.fromToken.current_price) / parseFloat(quote.toToken.current_price);
       const calculatedToAmount = parseFloat(fromAmount) * exchangeRate;
 
-      setToAmount(conditionalFixed(calculatedToAmount, 6) || '');
-      setQuoteData({
-        exchangeRate: conditionalFixed(exchangeRate, 6) || '1',
-        slippagePercentage: slippage,
-        priceImpact: Number(quote.priceImpact) || 0.1,
-        networkFee: Number(quote.feeAmountUSD) || 0.02,
-      });
-    } catch (error) {
+      return {
+        toAmount: conditionalFixed(calculatedToAmount, 6) || '',
+        quoteData: {
+          exchangeRate: conditionalFixed(exchangeRate, 6) || '1',
+          slippagePercentage: slippage,
+          priceImpact: Number(quote.priceImpact) || 0.1,
+          networkFee: Number(quote.feeAmountUSD) || 0.02,
+        },
+      };
+    },
+    onSuccess: (data) => {
+      setToAmount(data.toAmount);
+      setQuoteData(data.quoteData);
+    },
+    onError: (error) => {
+      setToAmount('');
+      setQuoteData({});
       toast({
         title: 'Error',
         description: 'Failed to fetch swap quote. Please try again.',
         variant: 'destructive',
       });
       console.error('Quote error:', error);
-    } finally {
-      setIsLoading(false);
+    },
+  });
+
+  const fetchQuote = useCallback(() => {
+    if (!fromAmount || !ownerAddress || fromToken === toToken || !fromToken || !toToken) {
+      setToAmount('');
+      setQuoteData({});
+      return;
     }
-  }, [fromAmount, fromToken, toToken, account, slippage, chainId, ownerAddress, integratorFeeAddress, integratorFeePercentage, panoraApiKey, baseUrl, getTokenAddress, toast]);
+    quoteMutation.mutate();
+  }, [fromAmount, fromToken, toToken, ownerAddress, slippage, quoteMutation]);
 
   // Debounce and auto-refresh logic
   useEffect(() => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0 || fromToken === toToken || !fromToken || !toToken || !account?.address) {
+    if (!fromAmount || parseFloat(fromAmount) <= 0 || fromToken === toToken || !fromToken || !toToken || !ownerAddress) {
       setToAmount('');
       setQuoteData({});
       setCountdown(15);
       return;
     }
 
-    // Debounce the initial quote fetch
     const debounceTimeoutId = setTimeout(() => {
       fetchQuote();
-      setCountdown(20); // Reset countdown after fetch
+      setCountdown(20);
     }, 800);
 
-    // Auto-refresh timer
     const intervalId = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           fetchQuote();
-          return 20; // Reset
+          return 20;
         }
         return prev - 1;
       });
     }, 1000);
 
-    // Cleanup
     return () => {
       clearTimeout(debounceTimeoutId);
       clearInterval(intervalId);
     };
-  }, [fromAmount, fromToken, toToken, account, slippage]);
+  }, [fromAmount, fromToken, toToken, ownerAddress, slippage]);
 
-
-
+  // Initialize tokens
   useEffect(() => {
     setAllTokens(tokens as any);
+    setFilteredTokens(tokens as any);
     if (tokens.length > 0) {
       setFromToken(tokens[0].symbol);
       setToToken(tokens[1]?.symbol || tokens[0].symbol);
     }
   }, [setAllTokens]);
 
-  useEffect(() => {
-    const fetchBalances = async () => {
-      if (!connected || !ownerAddress) {
-        setBalances(new Map());
-        return;
+  // Fetch user token balances
+  const { data: userBalances = new Map(), isLoading: balancesLoading, error: balancesError } = useQuery({
+    queryKey: ['balances', ownerAddress, connected],
+    queryFn: async () => {
+      if (!connected || !ownerAddress || !aptosIndexerUrl) {
+        return new Map<string, number>();
       }
-      try {
-        const GET_USER_TOKEN_BALANCE = `
-          query GetUserTokenBalance($owner_address: String!) {
-            current_fungible_asset_balances(where: {owner_address: {_eq: $owner_address}}) {
-              asset_type
-              amount
-              metadata { decimals }
-            }
-          }`;
 
+      const GET_USER_TOKEN_BALANCE = `
+        query GetUserTokenBalance($owner_address: String!) {
+          current_fungible_asset_balances(where: {owner_address: {_eq: $owner_address}}) {
+            asset_type
+            amount
+            metadata { decimals }
+          }
+        }`;
+
+      try {
         const response = await fetch(aptosIndexerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: GET_USER_TOKEN_BALANCE, variables: { owner_address: ownerAddress } }),
         });
 
-        if (!response.ok) throw new Error('Failed to fetch balances');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
+        if (result.errors) {
+          throw new Error(result.errors[0].message);
+        }
+
         const newBalances = new Map<string, number>();
         result.data.current_fungible_asset_balances.forEach((balance: any) => {
           const amount = balance.amount / (10 ** balance.metadata.decimals);
           newBalances.set(balance.asset_type, amount);
         });
-        setBalances(newBalances);
+        return newBalances;
       } catch (error) {
-        console.error('Failed to fetch balances:', error);
-        setBalances(new Map());
+        console.error('Balance fetch error:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch balances. Please try again.',
+          variant: 'destructive',
+        });
+        return new Map<string, number>();
       }
-    };
+    },
+    enabled: connected && !!ownerAddress && !!aptosIndexerUrl,
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
 
-    fetchBalances();
-  }, [connected, ownerAddress, aptosIndexerUrl, setBalances]);
+  // Update balances in store - FIXED: Added proper comparison to prevent infinite loops
+  const previousBalancesRef = React.useRef<Map<string, number>>(new Map());
 
-  const handleSwap = async () => {
-    if (!fromAmount || !account?.address || fromToken === toToken || !fromToken || !toToken) {
-      toast({
-        title: 'Invalid Input',
-        description: 'Please enter a valid amount and select different tokens.',
-        variant: 'destructive',
-      });
-      return;
+  useEffect(() => {
+    // Only update if balances actually changed
+    if (userBalances !== previousBalancesRef.current) {
+      // Deep comparison to avoid unnecessary updates
+      const hasChanged = userBalances.size !== previousBalancesRef.current.size ||
+        Array.from(userBalances.entries()).some(([key, value]) =>
+          previousBalancesRef.current.get(key) !== value
+        );
+
+      if (hasChanged) {
+        setBalances(userBalances);
+        previousBalancesRef.current = new Map(userBalances); // Create a copy
+      }
     }
+  }, [userBalances, setBalances]);
 
-    const fromTokenData = allTokens.find((t) => t.symbol === fromToken);
-    const balance = fromTokenData ? balances.get(fromTokenData.tokenAddress) || 0 : 0;
-    if (!fromTokenData || parseFloat(fromAmount) > balance) {
-      toast({
-        title: 'Insufficient Balance',
-        description: `You don't have enough ${fromTokenData?.symbol || fromToken} to complete this swap.`,
-        variant: 'destructive',
+  // Fetch token prices for tokens with balance > 0
+  const { data: tokenPrices = new Map() } = useQuery({
+    queryKey: ['tokenPrices', allTokens, userBalances],
+    queryFn: async () => {
+      if (!allTokens.length || userBalances.size === 0) {
+        return new Map<string, number>();
+      }
+
+      const tokensWithBalance = allTokens.filter(token => {
+        const balance = userBalances.get(token.tokenAddress) || 0;
+        return balance > 0;
       });
-      return;
-    }
 
-    setIsLoading(true);
-    try {
+      if (tokensWithBalance.length === 0) {
+        return new Map<string, number>();
+      }
+
+      const tokenAddresses = tokensWithBalance.map(token => token.faAddress).join(',');
+      const query = { tokenAddress: tokenAddresses };
+      const queryString = new URLSearchParams(query);
+      const url = `${baseUrl}/prices?${queryString}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'x-api-key': panoraApiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const priceData = await response.json();
+      const newPrices = new Map<string, number>();
+      priceData.forEach((token: { faAddress: string; usdPrice: string }) => {
+        // Store prices using both faAddress and tokenAddress for compatibility
+        const price = parseFloat(token.usdPrice) || 0;
+        newPrices.set(token.faAddress, price);
+
+        // Also map to tokenAddress for easier lookup
+        const tokenData = allTokens.find(t => t.faAddress === token.faAddress);
+        if (tokenData?.tokenAddress) {
+          newPrices.set(tokenData.tokenAddress, price);
+        }
+      });
+      return newPrices;
+    },
+    enabled: allTokens.length > 0 && userBalances.size > 0,
+    staleTime: 60000,
+    refetchInterval: 120000,
+  });
+
+  // Swap mutation
+  const swapMutation = useMutation({
+    mutationFn: async () => {
+      if (!fromAmount || !ownerAddress || fromToken === toToken || !fromToken || !toToken) {
+        throw new Error('Invalid input parameters');
+      }
+
+      const fromTokenData = allTokens.find((t) => t.symbol === fromToken);
+      const balance = fromTokenData ? userBalances.get(fromTokenData.tokenAddress) || 0 : 0;
+      if (!fromTokenData || parseFloat(fromAmount) > balance) {
+        throw new Error(`Insufficient balance for ${fromTokenData?.symbol || fromToken}`);
+      }
+
       const params = new URLSearchParams({
         chainId,
-        fromTokenAddress: getTokenAddress(fromToken!),
-        toTokenAddress: getTokenAddress(toToken!),
+        fromTokenAddress: getTokenAddress(fromToken) as string,
+        toTokenAddress: getTokenAddress(toToken) as string,
         fromTokenAmount: fromAmount,
         toWalletAddress: ownerAddress as string,
         slippagePercentage: slippage.toString(),
-        integratorFeeAddress,
+        integratorFeeAddress: integratorFeeAddress as string,
         integratorFeePercentage: integratorFeePercentage.toString(),
       });
 
@@ -241,7 +334,6 @@ const SwapPage: React.FC = () => {
       }
 
       const swapData = await response.json();
-
       const transaction: InputTransactionData = {
         data: {
           function: swapData?.quotes[0]?.txData?.function || '',
@@ -261,6 +353,9 @@ const SwapPage: React.FC = () => {
         transactionHash: txResponse.hash,
       });
 
+      return txResponse;
+    },
+    onSuccess: (txResponse) => {
       if (txResponse.hash) {
         toast({
           title: "Success",
@@ -268,19 +363,27 @@ const SwapPage: React.FC = () => {
         });
         setFromAmount('');
         setToAmount('');
+        queryClient.invalidateQueries({ queryKey: ['balances'] });
+        queryClient.invalidateQueries({ queryKey: ['tokenPrices'] });
       } else {
         throw new Error('Transaction failed');
       }
-    } catch (error) {
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message.includes('Insufficient balance')
+        ? error.message
+        : 'Swap failed. Please try again.';
       toast({
-        title: 'Error',
-        description: 'Swap failed. Please try again.',
+        title: error.message.includes('Insufficient balance') ? 'Insufficient Balance' : 'Error',
+        description: errorMessage,
         variant: 'destructive',
       });
       console.error('Swap error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const handleSwap = () => {
+    swapMutation.mutate();
   };
 
   const swapTokens = () => {
@@ -289,15 +392,6 @@ const SwapPage: React.FC = () => {
     setToToken(fromToken);
     setFromAmount('');
     setToAmount('');
-  };
-
-  const filteredTokens = (search: string, excludeSymbol: string | null = null) => {
-    return allTokens.filter(
-      (token) =>
-        (token.symbol.toLowerCase().includes(search.toLowerCase()) ||
-          token.name.toLowerCase().includes(search.toLowerCase())) &&
-        token.symbol !== excludeSymbol
-    );
   };
 
   const openSidebar = (type: 'from' | 'to') => {
@@ -314,6 +408,8 @@ const SwapPage: React.FC = () => {
     setIsSidebarOpen(false);
     setSelectedTokenType(null);
   };
+
+  console.log(filteredTokens)
 
   return (
     <div className="max-w-md mx-auto space-y-6 relative">
@@ -339,33 +435,18 @@ const SwapPage: React.FC = () => {
                     <div>
                       <Label>Slippage Tolerance (%)</Label>
                       <div className="flex gap-2 mt-1">
-                        <button
-                          onClick={() => setSlippage(0.3)}
-                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 0.3
+                        {[0.3, 0.5, 1].map((value) => (
+                          <button
+                            key={value}
+                            onClick={() => setSlippage(value)}
+                            className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === value
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                            }`}
-                        >
-                          0.3%
-                        </button>
-                        <button
-                          onClick={() => setSlippage(0.5)}
-                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 0.5
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                            }`}
-                        >
-                          0.5%
-                        </button>
-                        <button
-                          onClick={() => setSlippage(1)}
-                          className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === 1
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                            }`}
-                        >
-                          1%
-                        </button>
+                              }`}
+                          >
+                            {value}%
+                          </button>
+                        ))}
                       </div>
                       <div className="text-xs text-muted-foreground mt-3">
                         Recommended: 0.5-1%. Higher slippage increases chance of execution but may result in worse price.
@@ -378,6 +459,10 @@ const SwapPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {balancesError && (
+            <div className="text-red-500 text-sm">Error fetching balances: {balancesError.message}</div>
+          )}
+          {balancesLoading && <div className="text-sm text-muted-foreground">Loading balances...</div>}
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">From</label>
             <div className="flex space-x-2">
@@ -389,10 +474,10 @@ const SwapPage: React.FC = () => {
                     const value = e.target.value;
                     const tokenData = allTokens.find((t) => t.symbol === fromToken);
                     const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
-                    if (parseFloat(value) > balance) {
-                      setFromAmount(balance.toString());
-                    } else {
+                    if (value === '' || (parseFloat(value) > 0 && parseFloat(value) <= balance)) {
                       setFromAmount(value);
+                    } else if (parseFloat(value) > balance) {
+                      setFromAmount(balance.toString());
                     }
                   }}
                   className="text-lg"
@@ -403,13 +488,13 @@ const SwapPage: React.FC = () => {
                     return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toString();
                   })()}
                   step="any"
-                  disabled={tokenListLoading || isLoading}
+                  disabled={balancesLoading || isLoading}
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => openSidebar('from')}
-                disabled={tokenListLoading || isLoading}
+                disabled={balancesLoading || isLoading}
                 className="w-32 flex items-center justify-between"
               >
                 {fromToken ? (
@@ -428,7 +513,8 @@ const SwapPage: React.FC = () => {
               <div className="text-xs text-muted-foreground">
                 Balance: {(() => {
                   const tokenData = allTokens.find((t) => t.symbol === fromToken);
-                  return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toFixed(2);
+                  const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                  return balance.toFixed(2);
                 })()}
               </div>
               <div className="flex space-x-1">
@@ -443,6 +529,7 @@ const SwapPage: React.FC = () => {
                       const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
                       setFromAmount((balance * percentage).toString());
                     }}
+                    disabled={balancesLoading || isLoading}
                   >
                     {percentage === 1 ? 'Max' : `${percentage * 100}%`}
                   </Button>
@@ -457,7 +544,7 @@ const SwapPage: React.FC = () => {
               size="icon"
               onClick={swapTokens}
               className="rounded-full border-2"
-              disabled={tokenListLoading || isLoading || !fromToken || !toToken}
+              disabled={balancesLoading || isLoading || !fromToken || !toToken}
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
@@ -472,13 +559,13 @@ const SwapPage: React.FC = () => {
                   value={toAmount}
                   className="text-lg"
                   readOnly
-                  disabled={tokenListLoading || isLoading}
+                  disabled={balancesLoading || isLoading}
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => openSidebar('to')}
-                disabled={tokenListLoading || isLoading}
+                disabled={balancesLoading || isLoading}
                 className="w-32 flex items-center justify-between"
               >
                 {toToken ? (
@@ -496,7 +583,8 @@ const SwapPage: React.FC = () => {
             <div className="text-xs text-muted-foreground">
               Balance: {(() => {
                 const tokenData = allTokens.find((t) => t.symbol === toToken);
-                return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toFixed(2);
+                const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                return balance.toFixed(2);
               })()}
             </div>
           </div>
@@ -510,12 +598,12 @@ const SwapPage: React.FC = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Price Impact</span>
                 <span className={quoteData.priceImpact < 1 ? 'text-green-500' : 'text-red-500'}>
-                  {quoteData.priceImpact.toFixed(2)}%
+                  {quoteData.priceImpact?.toFixed(2)}%
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Network Fee</span>
-                <span>~${quoteData.networkFee.toFixed(2)}</span>
+                <span>~${quoteData.networkFee?.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Slippage Tolerance</span>
@@ -524,13 +612,26 @@ const SwapPage: React.FC = () => {
             </div>
           )}
 
-         {connected ? <Button
-            className="w-full vault-button"
-            disabled={!fromAmount || fromToken === toToken || isLoading || tokenListLoading || !account || !fromToken || !toToken}
-            onClick={handleSwap}
-          >
-            {isLoading ? 'Processing...' : !fromAmount ? 'Enter Amount' : 'Swap'}
-          </Button> : <ShadcnWalletSelector className="w-full vault-button" />}
+          {connected ? (
+            <Button
+              className="w-full vault-button"
+              disabled={
+                !fromAmount ||
+                fromToken === toToken ||
+                quoteMutation.isPending ||
+                swapMutation.isPending ||
+                balancesLoading ||
+                !ownerAddress ||
+                !fromToken ||
+                !toToken
+              }
+              onClick={handleSwap}
+            >
+              {swapMutation.isPending ? 'Processing...' : !fromAmount ? 'Enter Amount' : 'Swap'}
+            </Button>
+          ) : (
+            <ShadcnWalletSelector className="w-full vault-button" />
+          )}
         </CardContent>
       </Card>
 
@@ -541,60 +642,78 @@ const SwapPage: React.FC = () => {
         </a>
       </div>
 
-      {isSidebarOpen && (
+      <div
+        className={isSidebarOpen ? "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" : "hidden"}
+        onClick={() => setIsSidebarOpen(false)}
+      >
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end"
-          onClick={() => setIsSidebarOpen(false)}
+          className="w-1/3 bg-gray-900 text-white h-full overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="w-1/3 bg-gray-900 text-white h-full overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-gray-700">
-              <Input
-                placeholder="Search by name, symbol, emoji or address..."
-                value={selectedTokenType === 'from' ? fromSearch : toSearch}
-                onChange={(e) => {
-                  if (selectedTokenType === 'from') setFromSearch(e.target.value);
-                  else setToSearch(e.target.value);
-                }}
-                className="w-full bg-gray-800 text-white border-gray-700"
-              />
-              <Button
-                variant="ghost"
-                onClick={() => setIsSidebarOpen(false)}
-                className="mt-2 text-white"
-              >
-                Close
-              </Button>
-            </div>
-            <div className="p-4 space-y-2">
-              {filteredTokens(selectedTokenType === 'from' ? fromSearch : toSearch, selectedTokenType === 'from' ? toToken : fromToken).map((token) => {
-                const balance = balances.get(token.tokenAddress) || 0;
-                return (
-                  <div
-                    key={token.symbol}
-                    className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
-                    onClick={() => selectToken(token.symbol)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <img src={token.logoUrl} alt={token.symbol} className="h-6 w-6 rounded-full" />
-                      <div>
-                        <div className="font-medium">{token.symbol}</div>
-                        <div className="text-xs text-gray-400">{token.name}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div>{balance.toFixed(2)}</div>
-                      <div className="text-xs text-gray-400">&lt;$0.01</div>
+          <div className="p-4 border-b border-gray-700">
+            <Input
+              placeholder="Search by name, symbol, emoji or address..."
+              value={selectedTokenType === 'from' ? fromSearch : toSearch}
+              onChange={(e) => {
+                const searchValue = e.target.value;
+                if (selectedTokenType === 'from') {
+                  setFromSearch(searchValue);
+                } else {
+                  setToSearch(searchValue);
+                }
+
+                // Filter tokens based on the new search value
+                if (searchValue.trim() === '') {
+                  setFilteredTokens(allTokens);
+                } else {
+                  setFilteredTokens(allTokens.filter(
+                    (token) =>
+                      token.symbol.toLowerCase().includes(searchValue.toLowerCase()) ||
+                      token.name.toLowerCase().includes(searchValue.toLowerCase())
+                  ));
+                }
+              }}
+              className="w-full bg-gray-800 text-white border-gray-700"
+            />
+            <Button
+              variant="ghost"
+              onClick={() => setIsSidebarOpen(false)}
+              className="mt-2 text-white"
+            >
+              Close
+            </Button>
+          </div>
+
+          <div className="text-center text-xs text-muted-foreground">Showing result for {filteredTokens.length} tokens</div>
+
+          <div className="p-4 space-y-2">
+            {filteredTokens.map((token) => {
+              const balance = balances.get(token.tokenAddress) || 0;
+              const usdPrice = tokenPrices.get(token.faAddress) || tokenPrices.get(token.tokenAddress) || 0;
+              const usdBalance = balance * usdPrice;
+              return (
+                <div
+                  key={token.symbol}
+                  className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
+                  onClick={() => selectToken(token.symbol)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <img src={token.logoUrl} alt={token.symbol} className="h-6 w-6 rounded-full" />
+                    <div>
+                      <div className="font-medium">{token.symbol}</div>
+                      <div className="text-xs text-gray-400">{token.name}</div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="text-right">
+                    <div>{balance.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400">{usdPrice > 0 ? `$${usdBalance.toFixed(2)}` : '<$0.01'}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
