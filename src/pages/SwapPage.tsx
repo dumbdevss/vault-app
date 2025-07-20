@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-core";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeftRight, Settings, ArrowUpDown } from 'lucide-react';
+import { Settings, ArrowUpDown } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useTokenStore } from '@/store/tokenStore';
 import { toast } from '@/components/ui/use-toast';
@@ -19,8 +19,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const SwapPage: React.FC = () => {
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [fromToken, setFromToken] = useState<string | null>(null);
-  const [toToken, setToToken] = useState<string | null>(null);
+  const [fromToken, setFromToken] = useState<string | null>(null); // Now stores token address
+  const [toToken, setToToken] = useState<string | null>(null); // Now stores token address
   const [isLoading, setIsLoading] = useState(false);
   const [quoteData, setQuoteData] = useState<{
     exchangeRate?: string;
@@ -45,10 +45,29 @@ const SwapPage: React.FC = () => {
   const integratorFeeAddress = import.meta.env.VITE_PANORA_INTEGRATOR_FEE_ADDRESS || '';
   const integratorFeePercentage = parseFloat(import.meta.env.VITE_PANORA_INTEGRATOR_FEE_PERCENTAGE || '0.1');
 
-  // Ensure consistent token address field
-  const getTokenAddress = (symbol: string): string => {
-    const token = allTokens.find((t) => t.symbol === symbol);
-    return token?.tokenAddress || token?.faAddress || ''; // Fallback to empty string
+  // Helper functions for token data
+  const getTokenByAddress = (address: string) => {
+    return allTokens.find((t) => t.tokenAddress === address || t.faAddress === address);
+  };
+
+  const getTokenAddress = (address: string): string => {
+    const token = getTokenByAddress(address);
+    return token?.tokenAddress || token?.faAddress || address; // Return the address itself as fallback
+  };
+
+  const getTokenSymbol = (address: string): string => {
+    const token = getTokenByAddress(address);
+    return token?.symbol || 'Unknown';
+  };
+
+  const getTokenName = (address: string): string => {
+    const token = getTokenByAddress(address);
+    return token?.name || 'Unknown Token';
+  };
+
+  const getTokenLogo = (address: string): string => {
+    const token = getTokenByAddress(address);
+    return token?.logoUrl || '';
   };
 
   const ownerAddress = account?.address && typeof account.address === 'object' && 'data' in account.address
@@ -165,8 +184,8 @@ const SwapPage: React.FC = () => {
     setAllTokens(tokens as any);
     setFilteredTokens(tokens as any);
     if (tokens.length > 0) {
-      setFromToken(tokens[0].symbol);
-      setToToken(tokens[1]?.symbol || tokens[0].symbol);
+      setFromToken(tokens[0].tokenAddress || tokens[0].faAddress);
+      setToToken(tokens[1]?.tokenAddress || tokens[1]?.faAddress || tokens[0].tokenAddress || tokens[0].faAddress);
     }
   }, [setAllTokens]);
 
@@ -304,10 +323,10 @@ const SwapPage: React.FC = () => {
         throw new Error('Invalid input parameters');
       }
 
-      const fromTokenData = allTokens.find((t) => t.symbol === fromToken);
+      const fromTokenData = getTokenByAddress(fromToken);
       const balance = fromTokenData ? userBalances.get(fromTokenData.tokenAddress) || 0 : 0;
       if (!fromTokenData || parseFloat(fromAmount) > balance) {
-        throw new Error(`Insufficient balance for ${fromTokenData?.symbol || fromToken}`);
+        throw new Error(`Insufficient balance for ${getTokenSymbol(fromToken)}`);
       }
 
       const params = new URLSearchParams({
@@ -399,23 +418,21 @@ const SwapPage: React.FC = () => {
     setIsSidebarOpen(true);
   };
 
-  const selectToken = (symbol: string) => {
+  const selectToken = (tokenAddress: string) => {
     if (selectedTokenType === 'from') {
-      setFromToken(symbol);
+      setFromToken(tokenAddress);
     } else if (selectedTokenType === 'to') {
-      setToToken(symbol);
+      setToToken(tokenAddress);
     }
     setIsSidebarOpen(false);
-    if(selectedTokenType === 'from'){
+    if (selectedTokenType === 'from') {
       setFromSearch('');
-    }else if(selectedTokenType === 'to'){
+    } else if (selectedTokenType === 'to') {
       setToSearch('');
     }
     setFilteredTokens(allTokens);
     setSelectedTokenType(null);
   };
-
-  console.log(filteredTokens)
 
   return (
     <div className="max-w-md mx-auto space-y-6 relative">
@@ -446,8 +463,8 @@ const SwapPage: React.FC = () => {
                             key={value}
                             onClick={() => setSlippage(value)}
                             className={`px-8 py-2 rounded-md text-sm font-medium transition-colors ${slippage === value
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                               }`}
                           >
                             {value}%
@@ -478,7 +495,7 @@ const SwapPage: React.FC = () => {
                   value={fromAmount}
                   onChange={(e) => {
                     const value = e.target.value;
-                    const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                    const tokenData = getTokenByAddress(fromToken);
                     const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
                     if (value === '' || (parseFloat(value) > 0 && parseFloat(value) <= balance)) {
                       setFromAmount(value);
@@ -490,7 +507,7 @@ const SwapPage: React.FC = () => {
                   type="number"
                   min="0"
                   max={(() => {
-                    const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                    const tokenData = getTokenByAddress(fromToken);
                     return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toString();
                   })()}
                   step="any"
@@ -506,11 +523,11 @@ const SwapPage: React.FC = () => {
                 {fromToken ? (
                   <>
                     <img
-                      src={allTokens.find((t) => t.symbol === fromToken)?.logoUrl}
-                      alt={fromToken}
+                      src={getTokenLogo(fromToken)}
+                      alt={getTokenSymbol(fromToken)}
                       className="h-5 w-5 rounded-full mr-2"
                     />
-                    {fromToken}
+                    {getTokenSymbol(fromToken)}
                   </>
                 ) : 'Select Token'}
               </Button>
@@ -518,8 +535,8 @@ const SwapPage: React.FC = () => {
             <div className="flex justify-between items-center mt-1">
               <div className="text-xs text-muted-foreground">
                 Balance: {(() => {
-                  const tokenData = allTokens.find((t) => t.symbol === fromToken);
-                  const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                  const tokenData = getTokenByAddress(fromToken);
+                  const balance = tokenData ? balances.get(tokenData.tokenAddress || tokenData.faAddress) || 0 : 0;
                   return balance.toFixed(2);
                 })()}
               </div>
@@ -531,7 +548,7 @@ const SwapPage: React.FC = () => {
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={() => {
-                      const tokenData = allTokens.find((t) => t.symbol === fromToken);
+                      const tokenData = getTokenByAddress(fromToken);
                       const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
                       setFromAmount((balance * percentage).toString());
                     }}
@@ -577,19 +594,19 @@ const SwapPage: React.FC = () => {
                 {toToken ? (
                   <>
                     <img
-                      src={allTokens.find((t) => t.symbol === toToken)?.logoUrl}
-                      alt={toToken}
+                      src={getTokenLogo(toToken)}
+                      alt={getTokenSymbol(toToken)}
                       className="h-5 w-5 rounded-full mr-2"
                     />
-                    {toToken}
+                    {getTokenSymbol(toToken)}
                   </>
                 ) : 'Select Token'}
               </Button>
             </div>
             <div className="text-xs text-muted-foreground">
               Balance: {(() => {
-                const tokenData = allTokens.find((t) => t.symbol === toToken);
-                const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                const tokenData = getTokenByAddress(toToken);
+                const balance = tokenData ? balances.get(tokenData.tokenAddress || tokenData.faAddress) || 0 : 0;
                 return balance.toFixed(2);
               })()}
             </div>
@@ -599,7 +616,7 @@ const SwapPage: React.FC = () => {
             <div className="space-y-2 p-3 bg-muted rounded-lg">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Exchange Rate</span>
-                <span>1 {fromToken} = {quoteData.exchangeRate} {toToken}</span>
+                <span>1 {getTokenSymbol(fromToken)} = {quoteData.exchangeRate} {getTokenSymbol(toToken)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Price Impact</span>
@@ -652,9 +669,9 @@ const SwapPage: React.FC = () => {
         className={isSidebarOpen ? "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" : "hidden"}
         onClick={() => {
           setIsSidebarOpen(false);
-          if(selectedTokenType === 'from'){
+          if (selectedTokenType === 'from') {
             setFromSearch('');
-          }else if(selectedTokenType === 'to'){
+          } else if (selectedTokenType === 'to') {
             setToSearch('');
           }
           setFilteredTokens(allTokens);
@@ -694,9 +711,9 @@ const SwapPage: React.FC = () => {
               variant="ghost"
               onClick={() => {
                 setIsSidebarOpen(false);
-                if(selectedTokenType === 'from'){
+                if (selectedTokenType === 'from') {
                   setFromSearch('');
-                }else if(selectedTokenType === 'to'){
+                } else if (selectedTokenType === 'to') {
                   setToSearch('');
                 }
                 setFilteredTokens(allTokens);
@@ -708,33 +725,33 @@ const SwapPage: React.FC = () => {
             </Button>
           </div>
           <div className="p-4 space-y-2">
-          {(() => {
-            return filteredTokens.map((token, i) => {
-              const balance = balances.get(token.tokenAddress) || 0;
-              const usdPrice = tokenPrices.get(token.faAddress) || tokenPrices.get(token.tokenAddress) || 0;
-              const usdBalance = balance * usdPrice;
-              return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
-                  onClick={() => selectToken(token.symbol)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <img src={token.logoUrl} alt={token.symbol} className="h-6 w-6 rounded-full" />
-                    <div>
-                      <div className="font-medium">{token.symbol}</div>
-                      <div className="text-xs text-gray-400">{token.name}</div>
+            {(() => {
+              return filteredTokens.map((token, i) => {
+                const balance = balances.get(token.tokenAddress || token.faAddress) || 0;
+                const usdPrice = tokenPrices.get(token.faAddress) || tokenPrices.get(token.tokenAddress) || 0;
+                const usdBalance = balance * usdPrice;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
+                    onClick={() => selectToken(token.tokenAddress || token.faAddress)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <img src={token.logoUrl} alt={token.symbol} className="h-6 w-6 rounded-full" />
+                      <div>
+                        <div className="font-medium">{token.symbol}</div>
+                        <div className="text-xs text-gray-400">{token.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div>{balance.toFixed(2)}</div>
+                      <div className="text-xs text-gray-400">{usdPrice > 0 ? `$${usdBalance.toFixed(2)}` : '<$0.01'}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div>{balance.toFixed(2)}</div>
-                    <div className="text-xs text-gray-400">{usdPrice > 0 ? `$${usdBalance.toFixed(2)}` : '<$0.01'}</div>
-                  </div>
-                </div>
-                // <p>{token.symbol}</p>
-              );
-            });
-          })()}
+                  // <p>{token.symbol}</p>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
