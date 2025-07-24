@@ -177,10 +177,10 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 				className="w-full mt-4 max-w-xs"
 			/>
 			<Table>
-				<TableHeader>
+				<TableHeader className="bg-background text-muted-foreground">
 					<TableRow>
-						<TableHead>Pool</TableHead>
-						<TableHead className="cursor-pointer">
+						<TableHead className="text-foreground">Pool</TableHead>
+						<TableHead className="cursor-pointer  text-foreground ">
 							<div className="flex items-center">
 								TVL
 								<div className="flex flex-col ml-2">
@@ -189,7 +189,7 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 								</div>
 							</div>
 						</TableHead>
-						<TableHead className="cursor-pointer">
+						<TableHead className="cursor-pointer text-foreground">
 							<div className="flex items-center">
 								Volume (24h)
 								<div className="flex flex-col ml-2">
@@ -198,7 +198,7 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 								</div>
 							</div>
 						</TableHead>
-						<TableHead className="cursor-pointer">
+						<TableHead className="cursor-pointer text-foreground">
 							<div className="flex items-center">
 								Fee (24h)
 								<div className="flex flex-col ml-2">
@@ -207,7 +207,7 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 								</div>
 							</div>
 						</TableHead>
-						<TableHead className="cursor-pointer">
+						<TableHead className="cursor-pointer text-foreground">
 							<div className="flex items-center">
 								APR
 								<div className="flex flex-col ml-2">
@@ -216,13 +216,13 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 								</div>
 							</div>
 						</TableHead>
-						<TableHead>Action</TableHead>
+						<TableHead className="text-foreground">Action</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{filteredAndSortedPools.map((pool) => (
 						<TableRow key={pool.id}>
-							<TableCell>
+							<TableCell className="text-xs">
 								<div className="flex items-center">
 									<div className="flex items-center">
 										<img src={pool.pool.token1Info.logoUrl} alt={pool.pool.token1Info.symbol} className="w-6 h-6 rounded-full" />
@@ -231,15 +231,15 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools, setSelectedPool, setIsDe
 									<span className="ml-2">{pool.pool.token1Info.symbol}/{pool.pool.token2Info.symbol}</span>
 								</div>
 							</TableCell>
-							<TableCell>{formatLargeNumber(parseFloat(pool.tvlUSD))}</TableCell>
-							<TableCell>{formatLargeNumber(parseFloat(pool.dailyVolumeUSD))}</TableCell>
-							<TableCell>{formatLargeNumber(parseFloat(pool.feesUSD))}</TableCell>
-							<TableCell>
+							<TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.tvlUSD))}</TableCell>
+							<TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.dailyVolumeUSD))}</TableCell>
+							<TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.feesUSD))}</TableCell>
+							<TableCell className="text-xs">
 								<span>
 									{(parseFloat(pool.feeAPR) + parseFloat(pool.farmAPR)).toFixed(2)}%
 								</span>
 							</TableCell>
-							<TableCell>
+							<TableCell className="text-xs">
 								<Button
 									onClick={() => {
 										setSelectedPool(pool);
@@ -507,11 +507,11 @@ const HyperionPage = () => {
 				</div>
 				{loading &&
 					<div className="mb-4 flex items-center gap-x-4">
-						<Skeleton className="vault-bg w-24 h-4"/>
-						<Skeleton className="vault-bg w-24 h-4"/>
-						<Skeleton className="vault-bg w-24 h-4"/>
-						<Skeleton className="vault-bg w-24 h-4"/>
-						<Skeleton className="vault-bg w-24 h-4"/>
+			  <Skeleton className="vault-bg w-32 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
 					</div>}
 				{error && <p className="text-red-500">Error: {error}</p>}
 				{data && (

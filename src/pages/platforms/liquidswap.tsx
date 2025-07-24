@@ -134,89 +134,89 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools }) => {
         className="w-full mt-4 max-w-xs"
       />
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-background text-muted-foreground">
           <TableRow>
-            <TableHead>Pool</TableHead>
-            <TableHead className="cursor-pointer">
+            <TableHead className="text-foreground">Pool</TableHead>
+            <TableHead className="cursor-pointer text-foreground">
               <div className="flex items-center">
                 TVL
                 <div className="flex flex-col ml-2">
                   <ArrowUp
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "tvlUSD" && sortConfig.direction === "ascending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("tvlUSD", "ascending")}
                   />
                   <ArrowDown
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "tvlUSD" && sortConfig.direction === "descending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("tvlUSD", "descending")}
                   />
                 </div>
               </div>
             </TableHead>
-            <TableHead className="cursor-pointer">
+            <TableHead className="cursor-pointer text-foreground">
               <div className="flex items-center">
                 Volume (24h)
                 <div className="flex flex-col ml-2">
                   <ArrowUp
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "dailyVolumeUSD" &&
-                        sortConfig.direction === "ascending"
-                        ? "text-primary"
-                        : ""
+                      sortConfig.direction === "ascending"
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("dailyVolumeUSD", "ascending")}
                   />
                   <ArrowDown
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "dailyVolumeUSD" &&
-                        sortConfig.direction === "descending"
-                        ? "text-primary"
-                        : ""
+                      sortConfig.direction === "descending"
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("dailyVolumeUSD", "descending")}
                   />
                 </div>
               </div>
             </TableHead>
-            <TableHead className="cursor-pointer">
+            <TableHead className="cursor-pointer text-foreground">
               <div className="flex items-center">
                 Fee (24h)
                 <div className="flex flex-col ml-2">
                   <ArrowUp
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "feesUSD" && sortConfig.direction === "ascending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("feesUSD", "ascending")}
                   />
                   <ArrowDown
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "feesUSD" && sortConfig.direction === "descending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("feesUSD", "descending")}
                   />
                 </div>
               </div>
             </TableHead>
-            <TableHead className="cursor-pointer">
+            <TableHead className="cursor-pointer text-foreground">
               <div className="flex items-center">
                 APR
                 <div className="flex flex-col ml-2">
                   <ArrowUp
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "totalAPR" && sortConfig.direction === "ascending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("totalAPR", "ascending")}
                   />
                   <ArrowDown
                     className={`h-3 w-3 cursor-pointer ${sortConfig.key === "totalAPR" && sortConfig.direction === "descending"
-                        ? "text-primary"
-                        : ""
+                      ? "text-primary"
+                      : ""
                       }`}
                     onClick={() => requestSort("totalAPR", "descending")}
                   />
@@ -229,7 +229,7 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools }) => {
         <TableBody>
           {filteredAndSortedPools.map((pool) => (
             <TableRow key={pool.id}>
-              <TableCell>
+              <TableCell className="text-xs">
                 <div className="flex items-center">
                   <div className="flex items-center">
                     <img
@@ -248,10 +248,10 @@ const PoolsTable: React.FC<PoolsTableProps> = ({ pools }) => {
                   </span>
                 </div>
               </TableCell>
-              <TableCell>{formatLargeNumber(parseFloat(pool.tvlUSD))}</TableCell>
-              <TableCell>{formatLargeNumber(parseFloat(pool.dailyVolumeUSD))}</TableCell>
-              <TableCell>{formatLargeNumber(parseFloat(pool.feesUSD))}</TableCell>
-              <TableCell>
+              <TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.tvlUSD))}</TableCell>
+              <TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.dailyVolumeUSD))}</TableCell>
+              <TableCell className="text-xs">{formatLargeNumber(parseFloat(pool.feesUSD))}</TableCell>
+              <TableCell className="text-xs">
                 <span>{(parseFloat(pool.feeAPR) + parseFloat(pool.farmAPR)).toFixed(2)}%</span>
               </TableCell>
 
@@ -397,11 +397,11 @@ export default function LiquidSwapPage() {
       setPools(poolItems);
     } catch (error) {
       console.error("Error fetching pools:", error);
-     toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Failed to fetch pools",
-    });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch pools",
+      });
     }
   };
 
@@ -446,11 +446,11 @@ export default function LiquidSwapPage() {
         </div>
         {loading && (
           <div className="mb-4 flex items-center gap-x-4">
-            <Skeleton className="vault-bg w-24 h-4" />
-            <Skeleton className="vault-bg w-24 h-4" />
-            <Skeleton className="vault-bg w-24 h-4" />
-            <Skeleton className="vault-bg w-24 h-4" />
-            <Skeleton className="vault-bg w-24 h-4" />
+            <Skeleton className="vault-bg w-32 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
+            <Skeleton className="vault-bg w-24 h-8" />
           </div>
         )}
         {data && (

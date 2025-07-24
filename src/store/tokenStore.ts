@@ -35,6 +35,8 @@ interface TokenStore {
   setPortfolioTokens: (tokens: any[]) => void;
   portfolioTokens: any[];
   balances: Map<string, number>;
+  appBalances: Map<string, number>;
+  setAppBalances: (balances: Map<string, number>) => void;
   setBalances: (balances: Map<string, number>) => void;
 }
 
@@ -46,5 +48,7 @@ export const useTokenStore = create<TokenStore>((set) => ({
   },
   portfolioTokens: [],
   balances: new Map(),
+  appBalances: new Map(),
+  setAppBalances: (balances) => set({ appBalances: balances }),
   setBalances: (balances) => set({ balances }),
 }));

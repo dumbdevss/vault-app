@@ -212,19 +212,34 @@ const PortfolioPage = () => {
     enabled: connected && !!ownerAddress,
   });
 
-  // Combine token data
-  const combinedData = balances?.map((balance) => {
-    const tokenInfo = tokenList?.find((t) => t.faAddress === balance.asset_type || t.tokenAddress === balance.asset_type);
-    return {
-      ...balance,
-      symbol: tokenInfo?.symbol || balance.metadata?.symbol || 'Unknown',
-      name: tokenInfo?.name || balance.metadata?.name || 'Unknown Token',
-      decimals: tokenInfo?.decimals || balance.metadata?.decimals || 0,
-      usdPrice: tokenInfo?.usdPrice || '0',
-      icon_uri: tokenInfo?.logoUrl || balance.metadata?.icon_uri || '',
-      tokenAddress: balance.asset_type,
-    };
-  }) || [];
+  // Combine token data and remove duplicates by tokenAddress
+  const combinedData = Array.from(
+    (balances || []).reduce((map, balance) => {
+      const tokenInfo = tokenList?.find((t) => t.faAddress === balance.asset_type || t.tokenAddress === balance.asset_type);
+      const decimals = tokenInfo?.decimals || balance.metadata?.decimals || 0;
+      const usdPrice = typeof tokenInfo?.usdPrice === 'string' ? parseFloat(tokenInfo.usdPrice) : (tokenInfo?.usdPrice || 0);
+      const amount = typeof balance.amount === 'string' ? parseFloat(balance.amount) : (balance.amount || 0);
+      
+      const tokenData = {
+        ...balance,
+        symbol: tokenInfo?.symbol || balance.metadata?.symbol || 'Unknown',
+        name: tokenInfo?.name || balance.metadata?.name || 'Unknown Token',
+        decimals: decimals,
+        usdPrice: usdPrice,
+        icon_uri: tokenInfo?.logoUrl || balance.metadata?.icon_uri || '',
+        tokenAddress: balance.asset_type,
+        // Calculate the total value
+        totalValue: usdPrice * (amount / Math.pow(10, decimals))
+      };
+      
+      // Only add if we haven't seen this tokenAddress before
+      if (!map.has(tokenData.tokenAddress)) {
+        map.set(tokenData.tokenAddress, tokenData);
+      }
+      return map;
+    }, new Map<string, any>())
+    .values()
+  ).sort((a, b) => b.totalValue - a.totalValue); // Sort in descending order by total value
 
   useEffect(() => {
     setPortfolioTokens(combinedData);

@@ -324,7 +324,7 @@ const SwapPage: React.FC = () => {
       }
 
       const fromTokenData = getTokenByAddress(fromToken);
-      const balance = fromTokenData ? userBalances.get(fromTokenData.tokenAddress) || 0 : 0;
+      const balance = fromTokenData ? userBalances.get(fromTokenData.tokenAddress || fromTokenData.faAddress) || 0 : 0;
       if (!fromTokenData || parseFloat(fromAmount) > balance) {
         throw new Error(`Insufficient balance for ${getTokenSymbol(fromToken)}`);
       }
@@ -368,9 +368,13 @@ const SwapPage: React.FC = () => {
         },
       });
 
-      await aptosClient(network).waitForTransaction({
-        transactionHash: txResponse.hash,
-      });
+      console.log(txResponse);
+
+      // await aptosClient(network).waitForTransaction({
+      //   transactionHash: txResponse.hash,
+      // });
+
+      // console.log(txResponse);
 
       return txResponse;
     },
@@ -496,7 +500,7 @@ const SwapPage: React.FC = () => {
                   onChange={(e) => {
                     const value = e.target.value;
                     const tokenData = getTokenByAddress(fromToken);
-                    const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                    const balance = tokenData ? balances.get(tokenData.tokenAddress || tokenData.faAddress) || 0 : 0;
                     if (value === '' || (parseFloat(value) > 0 && parseFloat(value) <= balance)) {
                       setFromAmount(value);
                     } else if (parseFloat(value) > balance) {
@@ -508,7 +512,7 @@ const SwapPage: React.FC = () => {
                   min="0"
                   max={(() => {
                     const tokenData = getTokenByAddress(fromToken);
-                    return (tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0).toString();
+                    return (tokenData ? balances.get(tokenData.tokenAddress || tokenData.faAddress) || 0 : 0).toString();
                   })()}
                   step="any"
                   disabled={balancesLoading || isLoading}
@@ -549,7 +553,7 @@ const SwapPage: React.FC = () => {
                     className="h-6 px-2 text-xs"
                     onClick={() => {
                       const tokenData = getTokenByAddress(fromToken);
-                      const balance = tokenData ? balances.get(tokenData.tokenAddress) || 0 : 0;
+                      const balance = tokenData ? balances.get(tokenData.tokenAddress || tokenData.faAddress) || 0 : 0;
                       setFromAmount((balance * percentage).toString());
                     }}
                     disabled={balancesLoading || isLoading}
