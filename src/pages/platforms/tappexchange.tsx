@@ -377,8 +377,6 @@ const TappExchangePage = () => {
         sortBy: 'tvl',
       });
 
-      console.log(allPoolsData)
-
       const poolItems: PoolItem[] = allPoolsData.data.map((apiPool: any) => {
         const token1 = apiPool.tokens[0];
         const token2 = apiPool.tokens[1];
