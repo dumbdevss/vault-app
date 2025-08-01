@@ -51,6 +51,11 @@ const SendPage = () => {
   const [memo, setMemo] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isSending, setIsSending] = useState(false);
+  
+  // Sidebar state for token selection
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [tokenSearch, setTokenSearch] = useState('');
+  const [filteredTokens, setFilteredTokens] = useState<TokenBalance[]>([]);
 
   const ownerAddress = account?.address && typeof account.address === 'object' && 'data' in account.address
     ? toHexString((account.address as any).data)
@@ -97,10 +102,32 @@ const SendPage = () => {
 
   // Set default token when balances load
   useEffect(() => {
-    if (!selectedToken && balances && balances.length > 0) {
+    if (balances && balances.length > 0 && !selectedToken) {
       setSelectedToken(balances[0].asset_type);
     }
   }, [balances, selectedToken]);
+
+  // Update filtered tokens when balances change
+  useEffect(() => {
+    if (balances) {
+      setFilteredTokens(balances);
+    }
+  }, [balances]);
+
+  // Filter tokens based on search
+  useEffect(() => {
+    if (!balances) return;
+    
+    if (tokenSearch.trim() === '') {
+      setFilteredTokens(balances);
+    } else {
+      setFilteredTokens(balances.filter(
+        (token) =>
+          token.metadata.symbol.toLowerCase().includes(tokenSearch.toLowerCase()) ||
+          token.metadata.name.toLowerCase().includes(tokenSearch.toLowerCase())
+      ));
+    }
+  }, [tokenSearch, balances]);
 
   // Derived state
   const selectedTokenBalance = useMemo(() => {
@@ -172,6 +199,20 @@ const SendPage = () => {
     toast({ title: 'Contact Deleted' });
   };
 
+  // Sidebar helper functions
+  const openSidebar = () => {
+    setIsSidebarOpen(true);
+  };
+
+  const selectToken = (tokenAddress: string) => {
+    setSelectedToken(tokenAddress);
+    setIsSidebarOpen(false);
+    setTokenSearch('');
+    if (balances) {
+      setFilteredTokens(balances);
+    }
+  };
+
   // Render
   // if (!connected) {
   //   return <div className="text-center p-8">Please connect your wallet to send tokens.</div>;
@@ -197,19 +238,27 @@ const SendPage = () => {
               <div className="flex-1">
                 <Input placeholder="0.0" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-lg" />
               </div>
-              <Select value={selectedToken} onValueChange={setSelectedToken} disabled={balancesLoading}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Select Token" /></SelectTrigger>
-                <SelectContent>
-                  {balances?.map((token) => (
-                    <SelectItem key={token.asset_type} value={token.asset_type}>
-                      <div className="flex items-center space-x-2">
-                        <img src={token.icon_uri} alt={token.metadata.symbol} className="h-5 w-5 rounded-full bg-gray-200" />
-                        <span className="font-medium">{token.metadata.symbol}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button 
+                variant="outline" 
+                className="w-40 justify-start" 
+                onClick={openSidebar}
+                disabled={balancesLoading}
+              >
+                {selectedToken && balances ? (
+                  <div className="flex items-center space-x-2">
+                    <img 
+                      src={balances.find(t => t.asset_type === selectedToken)?.icon_uri} 
+                      alt={balances.find(t => t.asset_type === selectedToken)?.metadata.symbol} 
+                      className="h-5 w-5 rounded-full bg-gray-200" 
+                    />
+                    <span className="font-medium">
+                      {balances.find(t => t.asset_type === selectedToken)?.metadata.symbol}
+                    </span>
+                  </div>
+                ) : (
+                  "Select Token"
+                )}
+              </Button>
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Balance: {selectedTokenBalance.amount.toFixed(4)}</span>
@@ -227,6 +276,78 @@ const SendPage = () => {
           </Button> : <ShadcnWalletSelector className="w-full vault-button" />}
         </CardContent>
       </Card>
+
+      {/* Token Selection Sidebar */}
+      <div
+        className={`fixed inset-0 bg-black z-50 flex justify-end transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? 'bg-opacity-50 visible' : 'bg-opacity-0 invisible'
+        }`}
+        onClick={() => {
+          setIsSidebarOpen(false);
+          setTokenSearch('');
+          if (balances) {
+            setFilteredTokens(balances);
+          }
+        }}
+      >
+        <div
+          className={`w-1/3 bg-gray-900 text-white h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-4 border-b border-gray-700">
+            <Input
+              placeholder="Search by name or symbol..."
+              value={tokenSearch}
+              onChange={(e) => setTokenSearch(e.target.value)}
+              className="w-full bg-gray-800 text-white border-gray-700"
+            />
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsSidebarOpen(false);
+                setTokenSearch('');
+                if (balances) {
+                  setFilteredTokens(balances);
+                }
+              }}
+              className="mt-2 text-white"
+            >
+              Close
+            </Button>
+          </div>
+          <div className="p-4 space-y-2">
+            {filteredTokens.filter((token, index, self) => 
+              index === self.findIndex(t => t.asset_type === token.asset_type)
+            ).map((token, index) => {
+              const balance = token.amount / (10 ** token.metadata.decimals);
+              return (
+                <div
+                  key={token.asset_type}
+                  className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer transform transition-all duration-200 ease-in-out hover:scale-[1.02] hover:shadow-lg"
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    animation: isSidebarOpen ? 'slideInLeft 0.3s ease-out forwards' : 'none'
+                  }}
+                  onClick={() => selectToken(token.asset_type)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <img src={token.icon_uri} alt={token.metadata.symbol} className="h-6 w-6 rounded-full" />
+                    <div>
+                      <div className="font-medium">{token.metadata.symbol}</div>
+                      <div className="text-xs text-gray-400">{token.metadata.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div>{balance.toFixed(4)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

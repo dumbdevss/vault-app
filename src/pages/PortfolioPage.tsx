@@ -89,7 +89,6 @@ const PortfolioPage = () => {
         where: {
           owner_address: { _eq: $owner_address },
           amount: { _gt: 0 },
-          is_fungible_v2: { _eq: false }
         }
       ) {
         token_data_id
@@ -198,6 +197,7 @@ const PortfolioPage = () => {
         throw new Error(`Indexer API error: ${response.statusText}`);
       }
       const result = await response.json();
+      console.log(result);
       if (result.errors) {
         throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
       }
@@ -211,6 +211,8 @@ const PortfolioPage = () => {
     },
     enabled: connected && !!ownerAddress,
   });
+
+  console.log(nfts);
 
   // Combine token data and remove duplicates by tokenAddress
   const combinedData = Array.from(
@@ -463,7 +465,7 @@ const PortfolioPage = () => {
                     <div className="space-y-3">
                       <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
                         <img
-                          src={nft.token_uri}
+                          src={nft.token_uri.includes('ipfs://') ? `https://ipfs.io/ipfs/${nft.token_uri.split('ipfs://')[1]}` : nft.token_uri}
                           alt={nft.token_name}
                           className="w-full h-full object-cover rounded-lg"
                           onError={(e) => {
@@ -473,11 +475,11 @@ const PortfolioPage = () => {
                         />
                       </div>
                       <div>
-                        <h3 className="font-medium">{nft.token_name}</h3>
-                        <p className="text-sm text-muted-foreground">{nft.collection_name}</p>
-                        <p className="text-sm font-medium mt-1">
+                        <h3 className="font-medium text-base truncate">{nft.token_name}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{nft.collection_name}</p>
+                        {/* <p className="text-sm font-medium mt-1">
                           {nft.floor_price ? `Floor: ${nft.floor_price}` : 'Floor: N/A'}
-                        </p>
+                        </p> */}
                       </div>
                     </div>
                   </CardContent>

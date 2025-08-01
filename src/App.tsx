@@ -6,6 +6,9 @@ import VaultLayout from "./components/layout/VaultLayout";
 import PortfolioPage from "./pages/PortfolioPage";
 import SwapPage from "./pages/SwapPage";
 import SendPage from "./pages/SendPage";
+import PayrollPage from "./pages/PayrollPage";
+import OffRampPage from "./pages/OffRampPage";
+import BridgePage from "./pages/BridgePage";
 import PlatformsPage from "./pages/PlatformsPage";
 import NFTsPage from "./pages/NFTsPage";
 import NotFoundPage from './pages/not_found';
@@ -116,6 +119,9 @@ const App = () => {
             <Route path="/" element={<PortfolioPage />} />
             <Route path="/swap" element={<SwapPage />} />
             <Route path="/send" element={<SendPage />} />
+            <Route path="/payroll" element={<PayrollPage />} />
+            <Route path="/off-ramp" element={<OffRampPage />} />
+            <Route path="/bridge" element={<BridgePage />} />
             <Route path="/platforms" element={<PlatformsPage />}>
               <Route path="hyperion" element={<HyperionPage />} />
               <Route path="liquidswap" element={<LiquidSwapPage />} />

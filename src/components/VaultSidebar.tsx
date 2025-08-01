@@ -7,7 +7,11 @@ import {
   Send, 
   Sparkles,
   Image,
-  Settings
+  Settings,
+  Users,
+  ArrowDownToLine,
+  ArrowRightLeft,
+  Link2
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -35,6 +39,9 @@ const VaultSidebar = () => {
     { title: 'Portfolio', path: '/', icon: Briefcase },
     { title: 'Swap', path: '/swap', icon: ArrowLeftRight },
     { title: 'Send', path: '/send', icon: Send },
+    { title: 'Payroll', path: '/payroll', icon: Users },
+    { title: 'Off Ramp', path: '/off-ramp', icon: ArrowDownToLine },
+    { title: 'Bridge', path: '/bridge', icon: Link2 },
     { title: 'Platforms', path: '/platforms', icon: Sparkles },
     { title: 'NFTs', path: '/nfts', icon: Image },
   ];

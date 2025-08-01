@@ -119,13 +119,14 @@ const SwapPage: React.FC = () => {
         quoteData: {
           exchangeRate: conditionalFixed(exchangeRate, 6) || '1',
           slippagePercentage: slippage,
-          priceImpact: Number(quote.priceImpact) || 0.1,
-          networkFee: Number(quote.feeAmountUSD) || 0.02,
+          priceImpact: parseFloat(quote.quotes?.[0].priceImpact) || 0.1,
+          networkFee: parseFloat(quote.quotes?.[0].feeAmountUSD) || 0.02,
         },
       };
     },
     onSuccess: (data) => {
       setToAmount(data.toAmount);
+      // console.log(data.quoteData);
       setQuoteData(data.quoteData);
     },
     onError: (error) => {
@@ -625,12 +626,12 @@ const SwapPage: React.FC = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Price Impact</span>
                 <span className={quoteData.priceImpact < 1 ? 'text-green-500' : 'text-red-500'}>
-                  {quoteData.priceImpact?.toFixed(2)}%
+                  {quoteData.priceImpact?.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Network Fee</span>
-                <span>~${quoteData.networkFee?.toFixed(2)}</span>
+                <span>~${quoteData.networkFee?.toFixed(4)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Slippage Tolerance</span>
@@ -670,7 +671,9 @@ const SwapPage: React.FC = () => {
       </div>
 
       <div
-        className={isSidebarOpen ? "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" : "hidden"}
+        className={`fixed inset-0 bg-black z-50 flex justify-end transition-all duration-200 ease-out ${
+          isSidebarOpen ? 'bg-opacity-50 visible' : 'bg-opacity-0 invisible'
+        }`}
         onClick={() => {
           setIsSidebarOpen(false);
           if (selectedTokenType === 'from') {
@@ -683,7 +686,9 @@ const SwapPage: React.FC = () => {
         }}
       >
         <div
-          className="w-1/3 bg-gray-900 text-white h-full overflow-y-auto"
+          className={`w-1/3 bg-gray-900 text-white h-full overflow-y-auto transform transition-transform duration-200 ease-out will-change-transform ${
+            isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-4 border-b border-gray-700">
@@ -737,7 +742,13 @@ const SwapPage: React.FC = () => {
                 return (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer"
+                    className="flex items-center justify-between p-2 hover:bg-gray-800 rounded cursor-pointer transform transition-all duration-150 ease-out hover:scale-[1.01] hover:shadow-md will-change-transform"
+                    style={{
+                      animationDelay: `${i * 30}ms`,
+                      animation: isSidebarOpen ? 'slideInLeft 0.2s ease-out forwards' : 'none',
+                      opacity: isSidebarOpen ? 1 : 0,
+                      transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-10px)'
+                    }}
                     onClick={() => selectToken(token.tokenAddress || token.faAddress)}
                   >
                     <div className="flex items-center space-x-2">

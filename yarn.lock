@@ -2126,10 +2126,10 @@
   dependencies:
     "@tanstack/query-core" "5.83.0"
 
-"@tapp-exchange/sdk@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@tapp-exchange/sdk/-/sdk-0.0.4.tgz#a4412fb1da258bfb8ade8ea25896870ed5a5c72b"
-  integrity sha512-FnRfdMwqjnJuRpykyVrgtUhnARHnD8CMFTaWjmrvWH2LRrPiohe9KAp0BTdJbJfipuzmmNo2+ZjYGHnGf0+QiA==
+"@tapp-exchange/sdk@0.6.1":
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/@tapp-exchange/sdk/-/sdk-0.6.1.tgz#4f1a25bdc33f25a2f593a6fed506fe3924398c2e"
+  integrity sha512-wMDaMc1tfkgn5mGkBlk5bdz/ZRNHZ7RUKHSev72nVAoowcLy7P2oai0Pict4LGNNQE+Adu8hdNoOk3rBkdXbzA==
   dependencies:
     bignumber.js "^9.3.0"
 
