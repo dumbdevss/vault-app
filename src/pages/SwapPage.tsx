@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { InputTransactionData } from "@aptos-labs/wallet-adapter-core";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings, ArrowUpDown } from 'lucide-react';
@@ -354,7 +353,7 @@ const SwapPage: React.FC = () => {
       }
 
       const swapData = await response.json();
-      const transaction: InputTransactionData = {
+      const transaction = {
         data: {
           function: swapData?.quotes[0]?.txData?.function || '',
           functionArguments: swapData?.quotes[0]?.txData?.arguments || [],

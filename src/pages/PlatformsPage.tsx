@@ -171,7 +171,11 @@ const PlatformsPage = () => {
                 )}
                 <div className="flex space-x-2">
                   <Button variant="outline" className="flex-1"><span className="capitalize">{protocol.tag}</span></Button>
-                  <Button onClick={() => navigate(`/platforms/${protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`)} className="flex-1 bg-black text-white">Use on Vault</Button>
+                  {protocol.vault_available ? (
+                    <Button onClick={() => navigate(`/platforms/${protocol.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`)} className="flex-1 bg-black text-white">Use on Vault</Button>
+                  ) : (
+                    <Button onClick={() => window.open(protocol.website, '_blank')} className="flex-1 bg-primary text-primary-foreground">Visit Project</Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
